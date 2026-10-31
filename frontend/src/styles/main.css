@@ -1,0 +1,51 @@
+/* ── main column ───────────────────────────────────────────────────── */
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-content);
+}
+
+.topbar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-chrome);
+  flex: none;
+}
+/* The brand takes the rail's width, so the title starts where the
+   conversation does whether or not the rail is shown. */
+.topbar .brand { width: calc(260px - 14px - 12px); flex: none; }
+@media (max-width: 860px) { .topbar .brand { width: auto; } }
+
+.topbar .session-title {
+  flex: 1;
+  font-size: calc(13px * var(--fs)); font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.seg {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+}
+.seg button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px;
+  font: inherit; font-size: calc(12.5px * var(--fs)); font-weight: 500;
+  color: var(--ink-2);
+  background: none; border: 0; border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+}
+.seg button[aria-pressed="true"] {
+  background: var(--bg-content);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.seg button:not([aria-pressed="true"]):hover { color: var(--ink); }
+

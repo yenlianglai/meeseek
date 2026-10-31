@@ -1,0 +1,19 @@
+[project]
+name = "meeseek-pack-github"
+version = "0.1.0"
+description = "GitHub for meeseek: issues and pull requests over MCP — the example pack"
+requires-python = ">=3.11"
+dependencies = ["meeseek-pack-kit"]
+
+[project.scripts]
+meeseek-pack-github = "meeseek_pack_github.__main__:main"
+
+[tool.uv.sources]
+meeseek-pack-kit = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["meeseek_pack_github"]

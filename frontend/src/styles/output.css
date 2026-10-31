@@ -1,0 +1,30 @@
+/* Output viewer */
+.viewer-scrim {
+  position: fixed; inset: 0; z-index: 50; background: var(--scrim);
+  display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+}
+.viewer {
+  width: min(960px, 100%); max-height: 100%; display: flex; flex-direction: column;
+  background: var(--bg-content); border: 1px solid var(--line); border-radius: var(--r-card);
+  box-shadow: var(--shadow-pop); padding: 14px 18px;
+}
+.viewer-body { overflow-y: auto; min-height: 120px; }
+.viewer-body pre { white-space: pre-wrap; font-size: calc(12.5px * var(--fs)); }
+.code-link { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+.code-link code { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 2px; }
+.code-link:hover code { color: var(--accent); text-decoration-thickness: 2px; }
+
+/* the mark beside an agent's answer, and on the empty chat */
+.author-mark { width: 16px; height: 16px; flex: none; vertical-align: -3px; margin-right: 6px; color: var(--ink-2); }
+.empty-mark { width: 56px; height: 56px; color: var(--ink-2); margin-bottom: 4px; }
+
+/* the running turn's state (ui/Presence.tsx) */
+.presence { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px;
+  flex: none; opacity: 0; transition: opacity var(--t-fast); }
+.presence.shown { opacity: 1; }
+.presence-done { color: var(--ok); }
+.presence-failed { color: var(--danger); }
+.presence-pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  animation: presence-pulse 1.2s ease-in-out infinite; }
+@keyframes presence-pulse { 0%, 100% { opacity: 0.35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .presence-pulse { animation: none; } }

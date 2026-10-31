@@ -1,0 +1,665 @@
+/* ── chat ──────────────────────────────────────────────────────────── */
+
+.chat-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+
+.thread {
+  max-width: calc(760px * var(--fs));
+  margin: 0 auto;
+  padding: 24px 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.msg { display: flex; flex-direction: column; gap: 6px; }
+
+.msg .meta {
+  display: flex; align-items: center; gap: 8px;
+  font-size: calc(12px * var(--fs)); font-weight: 600;
+  min-height: 20px;
+}
+/* Revealed on hover or keyboard focus, never on touch-hover alone — the
+   coarse-pointer rule below pins them visible where there is no hover. */
+.msg-actions {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.msg:hover .msg-actions,
+.msg:focus-within .msg-actions { opacity: 1; }
+@media (hover: none) {
+  .msg-actions,
+  .table-actions,
+  .img-actions,
+  .artifact-block.code .artifact-actions { opacity: 1; }
+}
+.msg.user .meta { color: var(--ink-2); }
+.msg.agent .meta .author { color: var(--ink-3); font-weight: 500; }
+.msg .meta .live {
+  font-weight: 500; color: var(--ink-3); font-size: calc(11.5px * var(--fs));
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.msg .meta .live::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.2s ease-out infinite;
+}
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+.msg.user .body {
+  background: var(--bg-chrome);
+  border-radius: var(--r-card);
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* Files the user sent, above their text. Images are capped in height so a tall
+   screenshot does not push the prompt it belongs to off the screen. */
+.sent-images {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 8px;
+}
+.sent-images .img-block img { max-height: 240px; width: auto; }
+/* A sent PDF: a chip that downloads it back, since there is no thumbnail. */
+.sent-doc {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 100%;
+  padding: 5px 10px;
+  font-size: calc(12px * var(--fs)); color: var(--ink-2); text-decoration: none;
+  background: var(--bg-inset);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.sent-doc:hover { color: var(--accent); border-color: var(--accent); }
+
+.msg .error {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: var(--r-card);
+  padding: 10px 14px;
+  font-size: calc(13px * var(--fs));
+}
+
+.msg .question {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-card);
+  background: var(--bg-content);
+}
+.msg .question .q { font-weight: 500; white-space: pre-wrap; }
+.msg .question .rec { margin-top: 4px; font-size: calc(13px * var(--fs)); color: var(--ink-2); }
+.msg .question .options { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.msg .question .options button {
+  font: inherit; font-size: calc(13px * var(--fs));
+  padding: 4px 12px;
+  color: var(--ink);
+  background: var(--bg-chrome);
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  cursor: pointer;
+}
+.msg .question .options button:hover { border-color: var(--accent); color: var(--accent); }
+.msg .question .hint { margin-top: 8px; font-size: calc(12px * var(--fs)); color: var(--ink-3); }
+.msg .notice-inline {
+  font-size: calc(12.5px * var(--fs));
+  color: var(--ink-2);
+  padding: 6px 0;
+}
+.msg .resume-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 8px;
+  font-size: calc(13px * var(--fs));
+  color: var(--ink-2);
+}
+.msg .resume {
+  font: inherit; font-weight: 500;
+  padding: 4px 14px;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--r-control);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.msg .resume:hover { background: var(--accent-hover); }
+
+/* rendered markdown */
+.msg .md, .msg.user .body { font-size: calc(15px * var(--fs)); line-height: 1.7; }
+.md { overflow-wrap: anywhere; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md h1, .md h2, .md h3 { letter-spacing: -0.01em; line-height: 1.3; margin: 1.4em 0 0.5em; }
+.md h1 { font-size: calc(18px * var(--fs)); } .md h2 { font-size: calc(16px * var(--fs)); } .md h3 { font-size: calc(14.5px * var(--fs)); }
+.md p, .md ul, .md ol { margin: 0.5em 0; }
+.md li { margin: 0.15em 0; }
+.md code {
+  font-family: var(--mono); font-size: calc(12.5px * var(--fs));
+  background: var(--bg-inset);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.md pre {
+  background: var(--bg-inset);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+.md pre code { background: none; border: 0; padding: 0; font-size: calc(12.5px * var(--fs)); }
+/* Tables scroll inside a wrapper rather than becoming `display:block`, which
+   would drop the row/cell semantics screen readers need. */
+/* The copy control sits in a reserved gutter, so revealing it shifts nothing
+   and it never lands on the paragraph above. */
+.table-block { position: relative; margin: 0.6em 0; padding-top: 28px; }
+.table-scroll { overflow-x: auto; }
+.table-actions {
+  position: absolute;
+  top: 0; right: 0;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.table-block:hover .table-actions,
+.table-block:focus-within .table-actions { opacity: 1; }
+.table-actions .copy-btn { box-shadow: var(--shadow-pop); }
+.md table { border-collapse: collapse; }
+.md th, .md td {
+  border: 1px solid var(--line);
+  padding: 5px 10px;
+  font-size: calc(13px * var(--fs));
+  text-align: left;
+}
+.md th { background: var(--bg-inset); font-weight: 600; }
+.md td { font-variant-numeric: tabular-nums; }
+
+.img-block { position: relative; display: inline-block; max-width: 100%; }
+.img-block img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--r-card);
+  border: 1px solid var(--line);
+}
+.img-actions {
+  position: absolute;
+  top: 8px; right: 8px;
+  display: flex; gap: 5px;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.img-block:hover .img-actions,
+.img-block:focus-within .img-actions { opacity: 1; }
+.img-actions .copy-btn { box-shadow: var(--shadow-pop); }
+.img-broken {
+  display: inline-block;
+  padding: 8px 12px;
+  font-size: calc(12.5px * var(--fs));
+  color: var(--ink-2);
+  background: var(--bg-inset);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-card);
+}
+.md a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.md a:hover { color: var(--accent-hover); }
+.md blockquote {
+  margin: 0.6em 0; padding: 2px 0 2px 12px;
+  border-left: 1px solid var(--line-strong);
+  color: var(--ink-2);
+}
+.md hr { border: 0; border-top: 1px solid var(--line); margin: 1em 0; }
+
+/* ── take-away: every artifact leaves in one click ─────────────────── */
+
+/* One copy control for diagrams, code, tables, images, payloads and answers.
+   Quiet at rest: a thread of loud buttons would compete with the answer. */
+.copy-btn {
+  /* Contains the .sr-only status span; without it that span anchors to the
+     document and adds a phantom scroll below the app shell. */
+  position: relative;
+  display: inline-flex; align-items: center; gap: 5px;
+  flex: none;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: calc(11.5px * var(--fs));
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: var(--bg-content);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+.copy-btn.icon-only { padding: 3px; width: 24px; justify-content: center; }
+.copy-btn.rate { font-size: calc(12px * var(--fs)); filter: grayscale(1); opacity: .7; }
+.copy-btn.rate.on { filter: none; opacity: 1; border-color: var(--line-strong); }
+.rate-note { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.rate-note input { flex: 1; min-width: 0; padding: 4px 8px; font: inherit; font-size: calc(13px * var(--fs));
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.copy-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+.copy-btn:active { background: var(--bg-hover); }
+.copy-btn .copy-icon { display: inline-flex; flex: none; }
+/* Success and failure keep the resting width so a row of buttons cannot
+   reflow under the pointer mid-click. */
+.copy-btn .copy-label { min-width: 4.2em; text-align: left; }
+.copy-btn.icon-only .copy-label { min-width: 0; }
+.copy-btn.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, transparent); background: var(--ok-soft); }
+.copy-btn.fail { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); background: var(--danger-soft); }
+
+/* artifacts: mermaid diagrams, code, html previews */
+.artifact-block {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--bg-content);
+  margin: 0.6em 0;
+  overflow: hidden;
+}
+.artifact-block.loading {
+  padding: 14px;
+  color: var(--ink-3);
+  font-size: calc(12.5px * var(--fs));
+}
+.artifact-block pre { margin: 0; border: 0; border-radius: 0; }
+.artifact-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 6px 5px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-inset);
+  font-size: calc(11.5px * var(--fs));
+  color: var(--ink-2);
+}
+/* Monospace here is naming a language, which is exactly what it is for. */
+.artifact-kind {
+  font-family: var(--mono);
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.artifact-actions { display: flex; align-items: center; gap: 5px; flex: none; }
+.seg.mini button { padding: 2px 9px; font-size: calc(11.5px * var(--fs)); }
+/* Code keeps its inset body; its bar sits on the paper plane so
+   the language label reads as a caption rather than as the first line. */
+.artifact-block.code .artifact-bar { background: var(--bg-content); }
+.artifact-block.code .artifact-actions { opacity: 0; transition: opacity var(--t-fast); }
+.artifact-block.code:hover .artifact-actions,
+.artifact-block.code:focus-within .artifact-actions { opacity: 1; }
+
+/* Diagrams render in mermaid's light theme, so they sit on paper in either
+   theme (and copy as an image the same way). */
+.mermaid-svg {
+  background: #ffffff;
+  border-radius: var(--r-control);
+  padding: 14px;
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+.mermaid-svg svg { max-width: 100%; height: auto; }
+.html-preview {
+  display: block;
+  width: 100%;
+  height: 420px;
+  border: 0;
+  background: #fff;
+  resize: vertical;
+  overflow: auto;
+}
+
+/* syntax highlighting — quiet light theme from the token palette */
+.md .hljs-comment, .md .hljs-quote { color: var(--ink-3); font-style: italic; }
+.md .hljs-keyword, .md .hljs-selector-tag, .md .hljs-built_in { color: var(--hl-keyword); }
+.md .hljs-string, .md .hljs-attr { color: var(--hl-string); }
+.md .hljs-number, .md .hljs-literal { color: var(--hl-number); }
+.md .hljs-title, .md .hljs-name, .md .hljs-function { color: var(--accent); }
+.md .hljs-type, .md .hljs-class { color: var(--hl-type); }
+.md .hljs-meta, .md .hljs-tag { color: var(--ink-2); }
+
+/* An agent's steps, folded to one quiet line above its answer. */
+.steps > summary {
+  display: flex; align-items: center; gap: 8px;
+  width: fit-content; max-width: 100%;
+  padding: 3px 8px 3px 4px; margin-left: -4px;
+  font-size: calc(12.5px * var(--fs)); color: var(--ink-3);
+  border-radius: 8px; cursor: pointer; list-style: none; user-select: none;
+}
+.steps > summary::-webkit-details-marker { display: none; }
+.steps > summary:hover { color: var(--ink-2); background: var(--bg-hover); }
+.steps > summary .chev { display: inline-flex; transition: transform var(--t-fast); }
+.steps[open] > summary .chev { transform: rotate(90deg); }
+.steps > summary .spin {
+  width: 11px; height: 11px; flex: none;
+  border: 1.5px solid var(--line-strong); border-top-color: var(--accent); border-radius: 50%;
+  animation: rotate 0.8s linear infinite;
+}
+.steps-count { flex: none; color: var(--ink-2); font-weight: 500; }
+.steps-names { min-width: 0; font-family: var(--mono); font-size: calc(11.5px * var(--fs)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.steps-err { flex: none; color: var(--danger); }
+.steps .tool-link { margin-left: 4px; }
+.steps > .tools { margin: 6px 0 4px 18px; }
+
+/* tool calls */
+.tools { display: flex; flex-direction: column; gap: 4px; margin: 2px 0; }
+.tool {
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  background: var(--bg-content);
+  transition: border-color var(--t-fast);
+}
+.tool summary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px;
+  font-size: calc(12.5px * var(--fs));
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.tool summary::-webkit-details-marker { display: none; }
+.tool summary:hover { color: var(--ink); }
+.tool-link {
+  flex: none; margin-left: auto; padding: 1px 8px;
+  font: inherit; font-size: calc(11.5px * var(--fs)); color: var(--accent);
+  background: none; border: 1px solid var(--accent-soft); border-radius: 999px; cursor: pointer;
+  text-decoration: none;
+}
+.tool-link:hover { background: var(--accent-soft); }
+.tool summary .name { font-family: var(--mono); font-size: calc(12px * var(--fs)); color: var(--ink); }
+.tool summary .spin {
+  width: 12px; height: 12px; flex: none;
+  border: 1.5px solid var(--line-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: rotate 0.8s linear infinite;
+}
+@keyframes rotate { to { transform: rotate(360deg); } }
+/* args and the result preview share one line; both truncate rather than wrap,
+   so a chip stays one row tall no matter how big the payload is */
+.tool summary .args {
+  flex: none; max-width: 42%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tool summary .preview {
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--ink-3);
+}
+.tool.err { border-color: color-mix(in srgb, var(--danger) 35%, transparent); background: var(--danger-soft); }
+.tool.err summary .name, .tool.err summary .preview { color: var(--danger); }
+.tool .chev { margin-left: auto; color: var(--ink-3); transition: transform var(--t-fast); }
+.tool[open] .chev { transform: rotate(90deg); }
+/* A tool payload is the thing you paste into a bug report, so it gets the same
+   take-away control as an answer — floated over the scrolling body. */
+.tool-body { position: relative; }
+.tool-actions {
+  position: absolute;
+  top: 6px; right: 12px;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.tool:hover .tool-actions,
+.tool:focus-within .tool-actions { opacity: 1; }
+@media (hover: none) { .tool-actions { opacity: 1; } }
+.tool-actions .copy-btn { box-shadow: var(--shadow-pop); }
+.tool .result {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  background: var(--bg-inset);
+  border-radius: 0 0 var(--r-control) var(--r-control);
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: calc(12px * var(--fs));
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow-y: auto;
+  color: var(--ink-2);
+}
+.tool.err .result { background: var(--danger-soft); border-top-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+
+/* empty state teaches the interface */
+.empty {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 8px;
+  color: var(--ink-2);
+  padding: 40px;
+  text-align: center;
+}
+.empty .logo { width: 36px; height: 36px; color: var(--accent); }
+.empty h2 { font-size: calc(16px * var(--fs)); font-weight: 600; color: var(--ink); margin: 6px 0 0; letter-spacing: -0.01em; }
+.empty p { margin: 0; max-width: 44ch; }
+/* `.empty` centres rather than stretches, so without this cap the row is
+   sized by its widest pill and overflows a narrow screen. */
+.empty .hints { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; max-width: 100%; }
+.empty .hints button {
+  font: inherit; font-size: calc(12.5px * var(--fs));
+  color: var(--ink-2);
+  background: var(--bg-content);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.empty .hints button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.empty .hints button:disabled { opacity: 0.5; cursor: not-allowed; }
+/* A featured command carries its description, so the pill says what it does
+   rather than only what it is called. */
+/* Without max-width, a flex item's minimum is its min-content width, which the
+   `nowrap` description below makes a whole sentence wide — off a phone screen. */
+.empty .hints button.hint-cmd { display: inline-flex; align-items: baseline; gap: 7px; max-width: 100%; }
+.empty .hints .hint-cmd .cmd { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+.empty .hints .hint-cmd .args { font-family: var(--mono); font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
+.empty .hints .hint-cmd .desc {
+  color: var(--ink-3);
+  /* A pill cuts a long description rather than wrapping; the title attribute
+     carries the whole thing. */
+  max-width: 34ch;
+  /* Lets the ellipsis engage: a flex item will not shrink below its
+     min-content width until this is set. */
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.empty .hints .hint-cmd:hover:not(:disabled) .desc { color: var(--accent); }
+
+/* slash-command palette — a true overlay, so it owns the one shadow */
+.composer-anchor { max-width: calc(760px * var(--fs)); margin: 0 auto; position: relative; }
+.palette {
+  position: absolute;
+  bottom: 6px;
+  left: 0; right: 0;
+  background: var(--bg-content);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-pop);
+  padding: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 10;
+}
+.palette-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  font: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.palette-item.sel { background: var(--accent-soft); }
+.palette-item .cmd {
+  font-family: var(--mono);
+  font-size: calc(12.5px * var(--fs));
+  font-weight: 600;
+  color: var(--accent);
+  flex: none;
+}
+.palette-item .args {
+  font-family: var(--mono);
+  font-size: calc(11.5px * var(--fs));
+  color: var(--ink-3);
+  flex: none;
+}
+.palette-item .desc {
+  font-size: calc(12.5px * var(--fs));
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* composer */
+.composer-wrap {
+  border-top: 1px solid var(--line);
+  background: var(--bg-content);
+  padding: 12px 24px 16px;
+}
+.composer {
+  max-width: calc(760px * var(--fs));
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-card);
+  background: var(--bg-content);
+  padding: 8px 8px 8px 14px;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.composer:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.composer textarea {
+  flex: 1;
+  font: inherit;
+  color: var(--ink);
+  border: 0;
+  background: none;
+  resize: none;
+  min-height: 22px;
+  max-height: 200px;
+  padding: 2px 0;
+}
+.composer textarea:focus { outline: none; }
+.composer textarea::placeholder { color: var(--ink-3); }
+/* Send: the one filled-accent control on the screen. */
+.composer .send {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0;
+  color: var(--accent-ink); background: var(--accent);
+  border: 0; border-radius: 9px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.composer .send:hover:not(:disabled) { background: var(--accent-hover); }
+.composer .send:disabled { opacity: 0.4; cursor: default; }
+.composer .send:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.composer .stop {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  color: var(--ink-2);
+  background: var(--bg-chrome);
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.composer .stop:hover { color: var(--danger); border-color: var(--danger); }
+.composer-hint {
+  max-width: calc(760px * var(--fs)); margin: 6px auto 0;
+  font-size: calc(11.5px * var(--fs)); color: var(--ink-3);
+  padding-left: 2px;
+}
+/* Standing in for the composer, not trailing it: the strip keeps its height so
+   switching between a writable and a read-only session does not shift the
+   thread above it. */
+.composer-hint.read-only { margin-top: 0; padding: 8px 2px; }
+.composer .attach {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: color var(--t-fast), border-color var(--t-fast), opacity var(--t-fast);
+}
+.composer .attach:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.composer .attach:disabled { opacity: 0.4; cursor: not-allowed; }
+.att-input { display: none; }
+
+/* Pending attachments, between the palette and the input. Each thumbnail
+   carries its own remove button — the only way back out of a mis-paste. */
+.attachments {
+  max-width: calc(760px * var(--fs)); margin: 0 auto 8px;
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.att {
+  position: relative;
+  width: 88px;
+  padding-bottom: 2px;
+}
+.att img {
+  display: block;
+  width: 88px; height: 66px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-inset);
+}
+/* Same footprint as a thumbnail, for the attachment that has none. */
+.att-doc {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  width: 88px; height: 66px;
+  font-size: calc(11px * var(--fs)); font-weight: 600; letter-spacing: 0.04em;
+  color: var(--ink-3);
+  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-inset);
+}
+.att-remove {
+  position: absolute;
+  top: -6px; right: -6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px;
+  color: var(--ink-2);
+  background: var(--bg-content);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow-pop);
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.att-remove:hover { color: var(--danger); border-color: var(--danger); }
+.att-name {
+  display: block;
+  margin-top: 3px;
+  font-size: calc(10.5px * var(--fs)); color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.att-error {
+  max-width: calc(760px * var(--fs)); margin: 0 auto 8px;
+  font-size: calc(11.5px * var(--fs)); color: var(--danger);
+}
+/* The whole composer strip is the drop target, so the cue has to be visible
+   from wherever the cursor happens to be holding the file. */
+.composer-wrap.dragging { background: var(--accent-soft); }
+.composer-wrap.dragging .composer { border-color: var(--accent); border-style: dashed; }
+

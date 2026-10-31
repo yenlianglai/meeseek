@@ -1,0 +1,263 @@
+# ============================================================
+# meeseek — project configuration
+# ============================================================
+# Copy to `project.yaml` and fill in your values. This file holds NON-SECRET
+# config only (IDs, repo paths, project keys). Secrets/tokens go in `.env`.
+# `project.yaml` is gitignored so your real config never leaves your machine.
+# ============================================================
+
+project:
+  name: "Your Project"            # used for agent identity, container labels, prompt placeholders
+  team_name: "Your Team"          # how the assistant refers to your team
+  # Teams/domains used when attributing meeting speakers & requirement sources.
+  # Optional — leave empty to just use team_name + a generic participant label.
+  teams:
+    - "Your Team"
+    - "Partner Team"
+
+# Pictures in a conversation (runtime/media.py caps how many per turn).
+media:
+  image_calls_per_turn: 3
+
+
+# Google Cloud / Vertex AI — single entry point (loader injects the env vars).
+google_cloud:
+  project: "your-gcp-project"     # Vertex AI billing project (GOOGLE_CLOUD_PROJECT)
+  location: "global"
+  quota_project: "your-gcp-project"  # quota project for managed MCP (GCP_PROJECT_ID)
+  vertex: true                    # true = Vertex AI; false = Gemini API (needs GEMINI_API_KEY in .env)
+
+# Usage page: costs are list prices (litellm's price table) in US$, also shown in NT$ at this rate.
+usage:
+  usd_to_twd: 32.0
+
+# How meeseek learns from its own use: every turn is recorded with the policy
+# that produced it and what came of it (your 👍/👎, Inbox decisions, corrections);
+# once a week it tries edits to its own SKILL.md and rules in replay and asks you
+# to approve the one that does better. Nothing changes without your yes.
+learning:
+  session_days: 180     # conversations kept in sessions.db
+  weekly_usd: 5.0       # the weekly run's budget, every model call included
+  max_replays: 40       # replays a week (they read real systems)
+  k: 2                  # candidate edits a week
+
+# Events that start work on their own; each becomes an item in the console's
+# Inbox. The agent only reads: replies are drafts, every write waits for a yes.
+triggers:
+  # What files Inbox items on its own: each a pack's source tool, polled every
+  # minute (or every_s) with its args. Off until listed. The Google pack's
+  # gmail_poll / chat_poll / calendar_poll, the GCP pack's alerts_poll, the
+  # GitLab pack's mr_poll. A conversation (a Chat space, a mail thread, an MR)
+  # is one item: a new message updates it, and your own reply settles it.
+  #   gmail:    {tool: gmail_poll, args: {query: "in:inbox -from:me -category:promotions -category:social -category:forums"}}
+  #   chat:     {tool: chat_poll}                    # direct messages and @mentions
+  #   calendar: {tool: calendar_poll, every_s: 300, args: {lead_minutes: 10}}   # meetings about to start
+  #   alert:    {tool: alerts_poll}                  # open Cloud Monitoring incidents
+  #   gitlab:   {tool: mr_poll}                      # reviews asked of you, comments on your MRs
+  #   jira:     {tool: jira_poll}                    # tickets assigned to you, mentions, others' comments
+  # A Jira or GitLab notification mail goes into its ticket's or MR's item; a
+  # Chat message with one MR link goes into that MR's item (a first-round review).
+  sources: {}
+  record_meetings: false     # macOS: record Chrome audio + mic while a Meet tab is open
+  coach_meetings: []         # meetings to coach, as titled on the calendar: a rehearsal before, and after
+                             # a recorded one a report on how you came across (raise calendar's lead_minutes)
+  coach_telegram_chat: ""    # also send them to this Telegram chat (your chat with the bot = your user id)
+  coach_learn_from: []       # people whose chairing/pacing/phrasing the report watches for in 向他人學習, e.g. ["Casey", "Sasha"]
+  meeting_tickets:           # a recorded meeting's action items (yours, your team's) as held Jira writes
+    project: ""              # Jira key new tickets go to; "" = off (the meeting's turn proposes on its own)
+    components: ""
+    issue_type: Task
+    summary_prefix: ""       # e.g. "[Team] "
+    assignee: ""             # your Jira login: your own new tickets are assigned to you
+    team: ""                 # who your team is, e.g. "Casey, Sasha"
+    create_for_team: false   # also new tickets for your team's items (default: a comment on their ticket only)
+    # create_tool: jira_create_issue, comment_tool: jira_add_comment, search_tool: jira_search
+  daily_turns: 40            # autonomous turns a day, all sources together; past it items file as fyi (0 = no cap)
+  quiet_hours: ""            # local hours Telegram's own pushes wait out, e.g. "23-8"; replies to you still go ("" = off)
+  digest_cron: "0 10,16 * * 1-5"   # when the Inbox digest goes to the phone: unseen answers / held writes, summed up ("" = off)
+  review_cron: "30 18 * * 1-5"     # the daily review: the day's errors, failed turns and corrections, to Claude Code for
+                                   # ranked fixes — one Inbox item; an approved fix is a Claude session on a new branch ("" = off)
+
+# Claude Code as an agent meeseek hands work to (runtime/claude_agent.py), on
+# this machine's Claude Code login. It works in the folder it is given, in auto
+# mode, with meeseek's plugins (context lookups, drawing, review_page) — it
+# writes to no team system. Every Claude session here can be continued.
+claude:
+  enabled: true
+  meeseek_mcp_url: "http://127.0.0.1:8787/mcp-server/mcp"   # where Claude reaches the plugins
+  model: ""                     # empty = Claude Code's default
+  max_turns: 200
+  page_review_model: ""         # review_page's eyes; empty = models.multimodal
+
+# Talk to the orchestrator from your phone. Answers come back to the chat (via
+# Telegram's servers); writes wait for your Approve there. Token in .env.
+# With no user ids listed, the bot replies with the sender's id — add yours.
+messengers:
+  telegram: false
+  telegram_allowed_users: []   # ["123456789"]
+
+# Orchestrator pipeline feature flags (root-level tools, not skills)
+workflows:
+  meeting_notes: true    # /meetings — meeting recording → structured notes
+
+# Model tiers. Skills name a tier (model: workflow / fast / coding) so a model
+# is set once here. A value is a Gemini id or any litellm id; a bedrock/... id
+# also needs `uv sync --extra bedrock`.
+models:
+  router: "gemini-2.5-pro"
+  workflow: "gemini-2.5-pro"
+  fast: "gemini-2.5-flash"
+  multimodal: "gemini-2.5-flash"     # audio and images (meeting transcription)
+  coding: "gemini-2.5-pro"           # code review and implementation; empty = workflow
+  image: "gemini-3.1-flash-image"    # generate_image
+  max_turns: 20
+  iteration_budget: 60               # tool calls per turn per agent; then it is told to answer
+  turn_minutes: 15                   # wall-clock cap on autonomous turns (Inbox/MCP); console turns are never time-capped (0 = off)
+  transient_retries: 10              # a turn stopped by 429/5xx/timeout resumes from its last step, up to this many times
+  compaction_chars: 240000           # history above this many chars is summarised (0 = off)…
+  compaction_keep: 12                # …keeping this many recent events verbatim
+  gateway: ""                        # OpenAI-compatible endpoint for every model call (GoModel, a litellm proxy); "" = providers directly. Key: MODEL_GATEWAY_KEY in .env
+
+# MCP servers: a pack from packs/ (`pack:`), a local command, or a remote URL.
+# A pack's reads go to every skill and its writes to the skills whose `tools:`
+# grant them; another server's tools go to the skills in its `agents:`.
+mcp_servers:
+  jira:
+    pack: jira                    # packs/jira — Jira reads for every skill
+    config:
+      projects:                   # first entry = primary project (tool default)
+        - key: "PROJ"
+          board: "Your Board"
+          component: ""
+      ticket_prefix: "[PROJ]"     # prepended to ticket titles the agent files
+      base_url: "https://your-org.atlassian.net"
+    # secrets: JIRA_USERNAME, JIRA_API_TOKEN in .env
+
+  gitlab:
+    pack: gitlab                  # packs/gitlab — MRs, pipelines, issues, code
+    config:
+      projects:                   # the repos the tools may reach; first = default
+        - "group/your-repo"
+      base_url: "https://gitlab.com"
+      skip_ssl_verify: false
+      # Absolute path to a local clone of the primary repo: the folder the code
+      # skill hands Claude Code a change in.
+      local_clone: ""
+    # secret: GITLAB_TOKEN in .env
+
+  # github:
+  #   pack: github                # packs/github — issues and pull requests (the example pack)
+  #   config:
+  #     repos: ["owner/name"]     # the repositories the tools may reach; first = default
+  #   # secret: GITHUB_TOKEN in .env (optional for public repositories)
+
+  google:
+    pack: google                  # packs/google — Gmail, Chat, Drive, Calendar (read-only, ADC + Workspace scopes)
+    config:
+      folder_ids:                 # Drive folders mirrored into the knowledge base
+        - "your_folder_id"
+      extra_file_ids:             # extra individual docs to mirror
+        - "your_doc_id"
+      exclude_file_ids: []        # files under those folders that must not be mirrored (and are removed locally)
+      meetings_folder_id: ""      # optional: folder of meeting recordings (/meetings)
+
+  gcp:
+    pack: gcp                     # packs/gcp — logs, GKE pods and events, Monitoring alerts (ADC)
+    config:
+      default_namespace: "your-namespace"
+      project: "your-gcp-project"   # its alerts are read too, besides the environments'
+      environments:
+        uat:
+          context: "gke_your-uat-project_REGION_your-uat-cluster"
+          namespace: "your-namespace"
+          gcp_project: "your-uat-project"
+        prod:
+          context: "gke_your-prod-project_REGION_your-prod-cluster"
+          namespace: "your-namespace"
+          gcp_project: "your-prod-project"
+
+  atlassian:
+    command: "uvx"
+    args: ["mcp-atlassian"]
+    args_from_env:
+      - "--jira-url=${JIRA_URL}"
+      - "--jira-username=${JIRA_USERNAME}"
+      - "--jira-token=${JIRA_API_TOKEN}"
+      - "--confluence-url=${CONFLUENCE_URL}"
+      - "--confluence-username=${JIRA_USERNAME}"
+      - "--confluence-token=${JIRA_API_TOKEN}"
+    tool_filter:
+      # Jira — Read
+      - "jira_search"
+      - "jira_get_issue"
+      - "jira_get_project_issues"
+      - "jira_get_sprint_issues"
+      - "jira_get_sprints_from_board"
+      - "jira_get_agile_boards"
+      - "jira_get_transitions"
+      # Jira — Write
+      - "jira_create_issue"
+      - "jira_update_issue"
+      - "jira_add_comment"
+      - "jira_transition_issue"
+      - "jira_add_issues_to_sprint"
+      - "jira_create_issue_link"
+      - "jira_link_to_epic"
+      # Confluence — Read
+      - "confluence_search"
+      - "confluence_get_page"
+      - "confluence_get_page_children"
+      - "confluence_get_comments"
+      # Confluence — Write
+      - "confluence_create_page"
+      - "confluence_update_page"
+      - "confluence_add_comment"
+    agents: ["sprint"]
+
+  # Google-managed remote MCP servers (Streamable HTTP + ADC, IAM-governed).
+  # Endpoints auto-enable when the underlying API is enabled in the project.
+  # https://docs.cloud.google.com/mcp/supported-products
+
+  gcp_monitoring:
+    url: "https://monitoring.googleapis.com/mcp"
+    auth: adc
+    tool_filter:
+      - "list_timeseries"
+      - "query_range"
+    agents: ["infra"]
+
+  gcp_trace:
+    url: "https://cloudtrace.googleapis.com/mcp"
+    auth: adc
+    tool_filter:
+      - "list_traces"
+      - "get_trace"
+    agents: ["infra"]
+
+  gcp_error_reporting:
+    url: "https://clouderrorreporting.googleapis.com/mcp"
+    auth: adc
+    tool_filter:
+      - "list_group_stats"
+    agents: ["infra"]
+
+  # GKE managed MCP (GA, read-only: cluster status, K8s resources, logs).
+  gke:
+    url: "https://container.googleapis.com/mcp"
+    auth: adc
+    tool_filter:  # read-only subset (server also exposes create/apply/delete/patch)
+      - "check_k8s_auth"
+      - "list_k8s_api_resources"
+      - "describe_k8s_resource"
+      - "list_k8s_events"
+      - "get_k8s_resource"
+      - "get_k8s_cluster_info"
+      - "get_k8s_version"
+      - "get_k8s_rollout_status"
+      - "list_clusters"
+      - "get_cluster"
+      - "list_node_pools"
+      - "get_node_pool"
+      - "list_operations"
+      - "get_operation"
+    agents: ["infra"]

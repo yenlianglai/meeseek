@@ -1,0 +1,179 @@
+/* ── usage ─────────────────────────────────────────────────────────── */
+
+.usage-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.usage { max-width: calc(860px * var(--fs)); margin: 0 auto; padding: 20px 24px 40px; }
+.usage-head { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+
+.section-label {
+  font-size: calc(11px * var(--fs)); font-weight: 600;
+  letter-spacing: 0.02em; text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+.usage-section { margin-bottom: 28px; }
+
+/* Totals read as text, not as a chart — four numbers need no plot. */
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+.stat {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 16px;
+  background: var(--bg-content);
+}
+.stat-label { font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
+.stat-value {
+  font-size: calc(24px * var(--fs)); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.stat-sub { font-size: calc(12px * var(--fs)); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+.usage-chart {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--bg-content);
+  padding: 14px 16px 10px;
+}
+.usage-bars {
+  display: flex; align-items: flex-end; gap: 2px;
+  height: 132px;
+}
+.usage-bar-col {
+  flex: 1; min-width: 4px; height: 100%;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+/* Thin marks, 4px rounded data-end, anchored to the baseline. */
+.usage-bar {
+  width: 100%;
+  max-width: 40px; /* a short window shouldn't render as a wall of blocks */
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent);
+  transition: background var(--t-fast);
+}
+.usage-bar-col:hover .usage-bar { background: var(--accent-hover); }
+.usage-axis {
+  display: flex; justify-content: space-between;
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--line);
+  font-size: calc(11px * var(--fs)); color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.usage-table { width: 100%; border-collapse: collapse; }
+.usage-table th {
+  text-align: left;
+  font-size: calc(11px * var(--fs)); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--ink-3);
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.usage-table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: calc(12.5px * var(--fs));
+  vertical-align: middle;
+}
+.usage-table tr:hover td { background: var(--bg-inset); }
+.usage-table td.name { font-family: var(--mono); font-size: calc(11.5px * var(--fs)); }
+.usage-table .num, .usage-table th.num {
+  text-align: right; width: 90px;
+  font-variant-numeric: tabular-nums;
+}
+.usage-table .share-cell { width: 180px; }
+.usage-table .share {
+  height: 6px; border-radius: 3px;
+  background: var(--accent-soft);
+  position: relative;
+}
+.usage-table .share > span {
+  position: absolute; top: 0; bottom: 0; left: 0;
+  border-radius: 3px;
+  background: var(--accent);
+  min-width: 2px;
+}
+
+.learning h2 { font-size: calc(15px * var(--fs)); margin: 0 0 4px; }
+.learn-card {
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--bg-content);
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.learn-head { display: flex; align-items: center; gap: 8px; }
+.learn-date { font-size: calc(12px * var(--fs)); color: var(--ink-3); }
+.learn-text { margin-top: 6px; line-height: 1.55; }
+.learn-reason { margin-top: 4px; font-size: calc(12.5px * var(--fs)); color: var(--ink-2); }
+.learn-case { margin-top: 8px; font-size: calc(12.5px * var(--fs)); color: var(--ink-2); }
+.learn-case summary { cursor: pointer; }
+.learn-case summary:hover { color: var(--accent); }
+.learn-case ol { margin: 6px 0 0; padding-left: 20px; }
+.learn-actions { display: flex; gap: 8px; margin-top: 10px; }
+.learn-row-actions { white-space: nowrap; text-align: right; }
+.learn-row-actions button { margin-left: 6px; }
+.usage-table tr.expired td { color: var(--ink-3); }
+.learn-check { margin-top: 6px; font-size: calc(12.5px * var(--fs)); }
+.learn-check.working { color: var(--ok); }
+.learn-check.redundant, .learn-check.unknown, .learn-check.no_case { color: var(--ink-2); }
+.learn-check.not_followed { color: var(--danger); }
+.learn-action { font-size: calc(12.5px * var(--fs)); color: var(--ink-2); }
+.learn-action.graduate { color: var(--ok); }
+.learn-verdicts { margin-left: auto; display: flex; gap: 4px; }
+.learn-verdict { font-size: calc(11.5px * var(--fs)); padding: 1px 6px; border-radius: 999px; background: var(--bg-hover); color: var(--ink-2); }
+.learn-verdict.working { color: var(--ok); }
+.learn-verdict.not_followed { color: var(--danger); }
+
+.usage-note {
+  font-size: calc(12px * var(--fs)); color: var(--ink-3);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.notice {
+  max-width: calc(760px * var(--fs));
+  margin: 12px auto;
+  padding: 10px 14px;
+  border-radius: var(--r-card);
+  background: var(--warn-soft);
+  color: var(--warn-ink);
+  font-size: calc(13px * var(--fs));
+}
+
+.btn-primary {
+  font: inherit; font-weight: 500;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--r-control);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn-primary.small { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; font-size: calc(12.5px * var(--fs)); }
+.btn-ghost.small { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; font-size: calc(12.5px * var(--fs)); }
+.btn-ghost {
+  font: inherit;
+  color: var(--ink-2);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-control);
+  padding: 6px 12px;
+  cursor: pointer;
+  text-decoration: none; /* an <a> dressed as a button */
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--line-strong); }
+.btn-ghost.danger:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+.btn-primary:disabled, .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+

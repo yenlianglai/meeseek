@@ -1,0 +1,15 @@
+/* Pressed: one small give for every button-like control. */
+:is(.btn-primary, .btn-ghost, .seg button, .row-btn, .tool-link, .confirm-yes, .confirm-no,
+    .composer .stop, .session-open, .ctx-file, .inbox-item-head, .empty .hints button,
+    .new-chat, .theme-toggle, .rail-toggle, .brand-home):active:not(:disabled) { transform: translateY(0.5px); }
+
+.chip {
+  display: inline-flex;
+  font-size: calc(11px * var(--fs)); font-weight: 500;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+

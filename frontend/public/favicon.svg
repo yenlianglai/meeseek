@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    .ink { stroke: #14181d; } .sig { stroke: #1f6fb2; }
+    @media (prefers-color-scheme: dark) { .ink { stroke: #e7eaee; } .sig { stroke: #6cc4ff; } }
+  </style>
+  <path class="ink" d="M7.5 4.5H4.5v15h3M16.5 4.5h3v15h-3" stroke-width="2.2"/>
+  <path class="sig" d="M8.6 12.4 11 14.8l4.6-5.2" stroke-width="2.6"/>
+</svg>

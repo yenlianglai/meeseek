@@ -1,0 +1,70 @@
+/* ── trace ─────────────────────────────────────────────────────────── */
+
+.trace-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.trace {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 20px 24px 32px;
+}
+.trace .invocation {
+  margin-bottom: 22px;
+  /* A long session's trace is hundreds of rows: those off screen skip layout
+     and paint until scrolled to. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+.trace .inv-head {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+}
+.trace .inv-head .q {
+  font-weight: 600; font-size: calc(13.5px * var(--fs));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.trace .inv-head time {
+  font-size: calc(11.5px * var(--fs)); color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.trace table { width: 100%; border-collapse: collapse; }
+.trace th {
+  text-align: left;
+  font-size: calc(11px * var(--fs)); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.02em;
+  color: var(--ink-3);
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.trace td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: calc(12.5px * var(--fs));
+  vertical-align: top;
+}
+.trace tr:hover td { background: var(--bg-inset); }
+.trace td.t { font-variant-numeric: tabular-nums; color: var(--ink-3); white-space: nowrap; width: 64px; }
+.trace td.author { white-space: nowrap; width: 160px; }
+.trace .chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: calc(11.5px * var(--fs)); font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--bg-chrome);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+.trace .chip .dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.trace td.kind { width: 110px; white-space: nowrap; color: var(--ink-2); }
+.trace td.detail { font-family: var(--mono); font-size: calc(11.5px * var(--fs)); color: var(--ink-2); overflow-wrap: anywhere; }
+.trace td.detail .err { color: var(--danger); }
+.trace td.model {
+  width: 150px; white-space: nowrap;
+  font-size: calc(11.5px * var(--fs)); color: var(--ink-3);
+}
+.trace td.num, .trace th.num {
+  width: 68px; text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+

@@ -1,0 +1,56 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+.gcloud-oauth-client.json
+client_secret*.json
+
+# Project-specific config (contains your Drive IDs, Jira key, etc.)
+project.yaml
+
+# Sync state, caches, local session/artifact stores
+.cache/
+src/meeseek/agents/.adk/
+
+# Knowledge base — YOUR content (notes, synced docs, outputs). Never committed;
+# it holds team-specific knowledge. Only the anonymized seed under
+# knowledge_base/notes/examples/ (and READMEs) is tracked, as a format guide.
+knowledge_base/sources/
+knowledge_base/outputs/
+knowledge_base/notes/*
+!knowledge_base/notes/examples/
+!knowledge_base/notes/README.md
+knowledge_base/notes/facts.md
+
+# Skill-learned rules (consent-gated, runtime-written) stay local
+skills/*/learned.md
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+
+# Claude Code local state: per-machine settings and throwaway worktree checkouts
+.claude/settings.local.json
+.claude/worktrees/
+evals/harness/results/
+
+# Built from recorder/MeetingRecorder.swift on first use
+recorder/meeting-recorder
+
+
+# the open-source check's list names people and internal things: never committed
+.oss-forbidden
+
+# the motion studio (frontend/motion/README.md): its rounds and the unpicked candidates stay on this machine
+frontend/motion/rounds/
+frontend/motion/art/candidates/

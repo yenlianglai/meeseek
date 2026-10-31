@@ -1,0 +1,54 @@
+/* Inbox */
+/* Floats on its tab's corner: a count appearing must not move the tabs. */
+.seg button { position: relative; }
+.badge {
+  position: absolute; top: -5px; right: -5px;
+  min-width: 16px; padding: 0 5px; border-radius: 999px;
+  background: var(--danger); color: #fff; font-size: calc(10.5px * var(--fs)); line-height: 16px; text-align: center;
+}
+.inbox-sources { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+/* A source is a dot and its name; only one that needs you says more (its title). */
+.inbox-source { display: inline-flex; align-items: center; gap: 6px; font-size: calc(13px * var(--fs)); color: var(--ink-2); margin-right: 6px; }
+.inbox-source::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.inbox-source.ok::before { background: var(--accent); }
+.inbox-source.bad { color: var(--danger); }
+.inbox-source.bad::before { background: var(--danger); border-radius: 2px; }
+.inbox-source.warn { color: var(--warn-ink); }
+.inbox-source.warn::before { background: var(--warn-ink); border-radius: 2px; }
+.inbox-spacer { flex: 1; }
+.inbox-source-error { margin: 2px 0; }
+.inbox-filter { margin: 12px 0; }
+.inbox-item { padding: 0; transition: border-color var(--t-fast); }
+.inbox-item:has(> .inbox-item-head:hover) { border-color: var(--line-strong); }
+.inbox-item-head:hover .inbox-title { color: var(--accent); }
+.inbox-item-head {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 14px 4px;
+  background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer;
+}
+.inbox-item.unseen .inbox-title { font-weight: 600; }
+.inbox-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox-sub { padding: 0 14px 12px; font-size: calc(12.5px * var(--fs)); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox-item.open .inbox-sub { white-space: normal; }
+.inbox-detail { padding: 0 14px 14px; border-top: 1px solid var(--line); }
+.inbox-detail > * { margin-top: 10px; }
+.inbox-body { white-space: pre-wrap; margin-top: 6px; color: var(--ink-2); }
+.inbox-reply { font-size: calc(14px * var(--fs)); }
+.inbox-draft { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.inbox-draft-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.inbox-draft-text { margin-top: 8px; white-space: pre-wrap; line-height: 1.6; }
+.inbox-question { font-size: calc(13.5px * var(--fs)); }
+.inbox-action { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.inbox-action.pending { border-color: var(--danger); }
+.inbox-args, .inbox-args-view, .inbox-note {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 8px;
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--bg-hover); color: inherit;
+}
+.inbox-note { font-family: inherit; }
+.inbox-args-view { white-space: pre-wrap; overflow-x: auto; }
+.inbox-pill { font-size: calc(11.5px * var(--fs)); padding: 1px 8px; border-radius: 999px; background: var(--bg-hover); color: var(--ink-2); white-space: nowrap; }
+.inbox-pill.needs_approval, .inbox-pill.pending, .inbox-pill.failed { color: var(--danger); }
+.inbox-pill.needs_input { color: var(--danger); }
+.inbox-pill.ready, .inbox-pill.done { color: var(--ok); }
+
+.dismiss-reasons { display: inline-flex; gap: 6px; flex-wrap: wrap; }

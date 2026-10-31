@@ -1,0 +1,33 @@
+/* ── responsive: rail collapses ────────────────────────────────────── */
+
+.rail-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: none; width: 30px; height: 30px;
+  color: var(--ink-3);
+  background: none; border: 0; border-radius: 8px; cursor: pointer;
+}
+.rail-toggle:hover { color: var(--ink); background: var(--bg-hover); }
+@media (min-width: 861px) {
+  .shell.rail-hidden .rail { display: none; }
+}
+
+@media (max-width: 860px) {
+  .rail {
+    position: fixed; inset: 0 auto 0 0; z-index: 20;
+    transform: translateX(-100%);
+    transition: transform var(--t-med);
+    box-shadow: none;
+  }
+  .rail.open { transform: none; box-shadow: var(--shadow-pop); }
+  .scrim {
+    position: fixed; inset: 0; z-index: 19;
+    background: var(--scrim);
+    border: 0; padding: 0; cursor: default;
+  }
+  .thread, .composer, .composer-hint, .composer-anchor { max-width: none; }
+}
+
+/* The scrim is the narrow overlay's: widening the window with it open must
+   not leave a bare button in the row. */
+@media (min-width: 861px) { .scrim { display: none; } }
+

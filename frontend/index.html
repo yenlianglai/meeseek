@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>meeseek</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <!--
+    THESIS: One calm, dense workbench where you talk to the agent team and can
+    always see what it actually did. Each agent is summoned for one task and is
+    gone when it is done: the console shows the task, its steps and its result,
+    and nothing that is not about them.
+    OWN-WORLD: meeseek — a terminal-flavoured ops console in light and dark.
+    Geist for what people read, Geist Mono for what machines write (ids, paths,
+    tool names, status). One signal colour (#1F6FB2 light, #6CC4FF dark) for
+    what is live, selected or clickable; hairlines, 8px controls. The mark is
+    one task in brackets, done.
+    STORY: Open → last session resumes → ask → watch the answer stream with its
+    steps folded inline → open what it produced → approve what it wants to do.
+    FORM: tech and geek, readable first; English UI.
+    -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

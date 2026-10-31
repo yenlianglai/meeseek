@@ -1,0 +1,87 @@
+[project]
+name = "meeseek"
+version = "0.3.0"
+description = "meeseek: a multi-agent assistant for an engineering team, with knowledge base sync and multi-agent workflows"
+requires-python = ">=3.11"
+dependencies = [
+    "apscheduler>=3.10.0",
+    "claude-agent-sdk>=0.2.165",
+    "fastapi>=0.115",
+    "google-api-python-client>=2.197.0",
+    "google-auth>=2.54.0",
+    "google-genai>=2.8.0",
+    "httpx>=0.27",
+    "litellm>=1.95.0",
+    "mcp>=1.27.2",
+    "openai>=1.50",
+    "pillow>=10",
+    "pydantic>=2.7",
+    "python-dotenv>=1.2.2",
+    "pyyaml>=6.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.scripts]
+meeseek = "meeseek.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/meeseek"]
+
+# What `meeseek init` copies into a new home, for an installed meeseek: file by
+# file, never the skills folder whole — a checkout's skills/ also holds what it
+# learned (learned.md), which is nobody else's. tests/unit/test_packaging.py
+# keeps this list equal to the skill files git tracks.
+[tool.hatch.build.targets.wheel.force-include]
+"project.yaml.example" = "meeseek/_templates/project.yaml.example"
+".env.example" = "meeseek/_templates/.env.example"
+"skills/code/SKILL.md" = "meeseek/_templates/skills/code/SKILL.md"
+"skills/infra/SKILL.md" = "meeseek/_templates/skills/infra/SKILL.md"
+"skills/research/SKILL.md" = "meeseek/_templates/skills/research/SKILL.md"
+"skills/research/tools.py" = "meeseek/_templates/skills/research/tools.py"
+"skills/sprint/SKILL.md" = "meeseek/_templates/skills/sprint/SKILL.md"
+
+[project.optional-dependencies]
+bedrock = ["boto3>=1.43.64"]  # only for a model id that is Claude on Bedrock (litellm signs with it)
+dev = ["pytest>=8.0"]
+
+# The vendor packs in packs/, installed beside the core by default (each runs as
+# its own MCP server; meeseek never imports one). `--no-group packs` leaves
+# them out — how the core's tests prove they need none.
+[dependency-groups]
+packs = ["meeseek-pack-kit", "meeseek-pack-jira", "meeseek-pack-gitlab", "meeseek-pack-gcp", "meeseek-pack-google",
+         "meeseek-pack-github"]
+
+[tool.uv]
+default-groups = ["packs"]
+
+[tool.uv.workspace]
+members = ["packs/*"]
+exclude = ["packs/tests"]
+
+[tool.uv.sources]
+meeseek-pack-kit = { workspace = true }
+meeseek-pack-jira = { workspace = true }
+meeseek-pack-gitlab = { workspace = true }
+meeseek-pack-gcp = { workspace = true }
+meeseek-pack-google = { workspace = true }
+meeseek-pack-github = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short -m 'not e2e'"
+pythonpath = ["."]
+markers = [
+    "e2e: real end-to-end tests hitting live APIs (run with: pytest -m e2e)",
+]
+
+[tool.ruff]
+# Pin the lint ruleset (ruff 0.16 expanded defaults; BLE001/S110 flag our
+# intentional never-raise guards). Revisit adopting stricter rules deliberately.
+# The animation studio's scripts (internal, frontend/motion/) keep their own style.
+extend-exclude = ["frontend/motion"]
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
