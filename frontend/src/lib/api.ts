@@ -1,4 +1,4 @@
-import type { Attachment, Session, SessionRow, StreamEvent } from "./types";
+import type { Attachment, Session, SessionRow, StreamEvent, Workstream, WorkstreamRow } from "./types";
 
 /**
  * The session owner the console writes as. Other owners exist — the MCP server
@@ -67,6 +67,15 @@ export function deleteSession(id: string, user = CONSOLE_USER): Promise<void> {
 }
 
 /** The Learning page (`/learning_api/*`). */
+/** The workstreams: one shared context per ticket, MR or branch (runtime/workstreams.py). */
+export function listWorkstreams(closed = false): Promise<WorkstreamRow[]> {
+  return request(`/api/workstreams${closed ? "?closed=true" : ""}`);
+}
+
+export function getWorkstream(id: string): Promise<Workstream> {
+  return request(`/api/workstreams/${encodeURIComponent(id)}`);
+}
+
 export function learningApi<T>(path: string, method = "GET", body?: unknown): Promise<T> {
   return request<T>(`/learning_api${path}`, {
     method,

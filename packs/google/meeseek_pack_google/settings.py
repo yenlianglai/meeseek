@@ -6,9 +6,12 @@
                         mirrored (superseded versions, docs owned elsewhere);
                         a sync also deletes their local copy
     meetings_folder_id  a Drive folder of meeting recordings (/meetings)
+    sheets_writable     the spreadsheets (ids or links) the Sheets write tools
+                        may change; every other one is read only (sheets.py)
 
 Credentials: the machine's Application Default Credentials with the Workspace
-scopes (auth.py). Everything here reads; nothing writes to Workspace.
+scopes (auth.py). The Workspace scopes read; the one write scope is Sheets', and
+the pack writes only the spreadsheets in `sheets_writable`.
 """
 
 from __future__ import annotations
@@ -24,10 +27,12 @@ class Settings:
     extra_file_ids: list[str] = field(default_factory=list)
     exclude_file_ids: list[str] = field(default_factory=list)
     meetings_folder_id: str = ""
+    sheets_writable: list[str] = field(default_factory=list)
 
 
 def settings() -> Settings:
     c = config()
     return Settings(folder_ids=list(c.get("folder_ids") or []), extra_file_ids=list(c.get("extra_file_ids") or []),
                     exclude_file_ids=list(c.get("exclude_file_ids") or []),
-                    meetings_folder_id=str(c.get("meetings_folder_id", "")))
+                    meetings_folder_id=str(c.get("meetings_folder_id", "")),
+                    sheets_writable=list(c.get("sheets_writable") or []))

@@ -19,7 +19,7 @@ that does not exist, or a call that leaves a placeholder unfilled.
 - **Whole files** (`agents/`, most of `blocks/` and `internal/`) are sent byte for
   byte. A trailing newline in the file reaches the model.
 - **Sectioned files** (all of `runtime/`, plus `blocks/memory.md`, `blocks/tasks.md`,
-  `agents/claude_agent.md`, `internal/page_review.md`) hold several short
+  `agents/claude_agent.md`, `internal/page_review.md`, `internal/goldfish.md`) hold several short
   texts. A section starts at a line `## name` (lowercase ASCII, alone on the
   line) and runs to the next one; the blank lines around it are not part of the
   text. Anything before the first section is a note for the reader. A heading in
@@ -73,10 +73,14 @@ end (the daily plan); **internal call**
 | `runtime/trigger.md` | The request an Inbox item's first turn starts from, per source (mail, chat, MR, Jira ticket, alert, meeting about to start — a brief, or with `coach_meetings` a rehearsal; meeting just recorded — with or without the coach's report, and with the Jira proposals already held or not; a message from your phone), with the shared rules: read and draft only, replies in a ```reply block | router, in an Inbox session | `runtime/triggers.py:message_for`, `runtime/meeting_recorder.py:_finish`, `runtime/messengers/__init__.py:on_text` |
 | `runtime/mcp_server.md` | Server-level instructions for an MCP host's model: what to delegate, `needs_input`, outputs | the external MCP host (Claude Code …) | `runtime/mcp_server.py:build_mcp_server` |
 | `runtime/daily_review.md` | The daily review's brief: the day's errors, failed turns and corrections as data — find root causes, rank fixes by manual time saved, change nothing, end with a json list (`#review`); the brief of one approved fix, in its own worktree and branch, commit and never push (`#fix`) | Claude Code, as meeseek's subagent | `runtime/daily_review.py:run`, `carry_out` |
+| `runtime/drift_report.md` | The weekly drift report's brief: the knowledge base's design and engineering-management documents (listed as data) against the main repo's `docs/` and code through the plugins, bounded, read only — each inconsistency (what the document says, what the code says, where) in a json list (`#report`) | Claude Code, as meeseek's subagent | `runtime/drift_report.py:run` |
 | `runtime/daily_plan.md` | The plan's user message and the unread-source marker | headless: plan_my_day | `runtime/daily_plan.py:plan_my_day`, `_collect` |
 | `internal/daily_plan.md` | System prompt of the morning plan | headless: plan_my_day | `runtime/daily_plan.py:plan_my_day` |
 | `internal/page_review.md` | Gemini's visual check of a page an agent built, from phone and desktop screenshots, as JSON issues by severity (`#review`) — the `review_page` plugin | internal call (models.multimodal) | `runtime/page_review.py:review` |
+| `internal/goldfish.md` | The goldfish review of a spec: three reviewers that see only the document and what it references — comprehension (`#comprehension`), zoom-out: simplicity, YAGNI, reuse (`#zoom_out`), implementation readiness (`#readiness`) — each a JSON list of findings by severity | internal call (`spec_review.model`, else models.workflow), before a long ask_claude brief goes and from the `review_spec` tool | `runtime/goldfish.py:_prompt` |
 | `internal/meeting_coach.md` | The meeting coach's report on how the user came across — delivery, content, influence, against the rehearsal, rewrites, what to practise (`#report`) | internal call (models.multimodal) | `runtime/meeting_coach.py:report` |
+| `internal/workstream_update.md` | Fold one exchange about a piece of work into its shared notes: goal, state, next, decisions, open questions, title | internal call (models.fast), after a turn on a workstream | `runtime/workstreams.py:update` |
+| `internal/workstream_event.md` | Tell the workstream's Claude Code session about an outside event (a merge, review comments), to carry on with what it unblocks | Claude Code brief, opt-in (workstreams.route_to_claude) | `runtime/workstreams.py:_route` |
 | `internal/triage.md` | Does a mail or chat message need you: reply / investigate / fyi / ignore | internal call (models.fast) | `runtime/triggers.py:triage` |
 | `internal/rule_judge.md` | Does a reply follow a learned rule | internal call (models.fast) | `runtime/rule_review.py:judge` |
 | `internal/meeting_transcript.md` | One transcript of a recorded meeting, ten minutes a call: the laptop's two tracks (or Meet's own recording), speakers named from voice and context, carried window to window, the user's lines marked 我 | internal call (models.multimodal) | `runtime/meeting_transcript.py:transcript` |

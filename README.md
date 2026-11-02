@@ -186,6 +186,7 @@ off by default. Turn on a key when you want its function:
 | `triggers.sources`, `record_meetings` | the sources that start work on their own: mail, Chat, alerts, calendar (each one is the source of a pack); meeting recording |
 | `triggers.coach_meetings`, `coach_telegram_chat` | the meetings where the coach helps you, and your Telegram chat id |
 | `mcp_servers.google.config.meetings_folder_id` | your Meet recordings folder, for `/meetings` |
+| `mcp_servers.google.config.sheets_writable` | the spreadsheets (ids or links) meeseek may edit; every other one is read only, and each edit waits for your approval |
 | `claude.enabled` | `false` if you do not have a Claude Code seat |
 
 A team that shares one setup can keep its `project.yaml` in a private repo of
@@ -555,7 +556,7 @@ documents every route at `/docs` (OpenAPI: `/openapi.json`).
 |------|-----|
 | `ask_meeseek(request, session_id, wait_seconds, image_paths, use_clipboard_image, caller)` | A request to the agents of meeseek. Returns `status` (`answered` / `needs_input` / `running` / `interrupted` / `failed`), `answer`, `handled_by`, `session_id`, and `task_id` if the request takes longer than the wait (with `wait_seconds: 0`, it returns the task immediately). A call with a `session_id` and no `request` continues a turn that stopped part-way, from its last step |
 | `check_meeseek(task_id, wait_seconds, stop)` | Shows the status of a task (progress, then the result), or stops the task |
-| **Plugins** — `kb_grep` / `kb_read` / `kb_list`, `fetch_url` (reads Google Docs/Sheets links with your login, through the Google pack), `search_meeseek_sessions` / `get_meeseek_session`; `generate_image` / `render_diagram`; `review_page`; and every read of each running pack, available when the pack runs — for example `jira_search` / `jira_get_issue`, `list_mrs` / `get_mr` / `search_code` / `review_context` / `get_job_log`, `search_gmail` / `list_chat_spaces`, `query_logs` / `list_alerts` / `k8s_status` | The plugins of meeseek (`mcp_server.plugin_tools`): every registry tool that changes nothing outside the outputs of this machine, and every pack read. They look up the context of the team, draw (Gemini images, Mermaid), and let Gemini examine a page that an agent built. Each one is one stateless call, with no agent turn behind it. A Claude session that meeseek gives work to can use these plugins, and nothing else from meeseek |
+| **Plugins** — `kb_grep` / `kb_read` / `kb_list`, `fetch_url` (reads Google Docs/Sheets links with your login, through the Google pack), `search_meeseek_sessions` / `get_meeseek_session`; `workstream_get` / `workstream_note` (the shared notes on a ticket, MR or branch); `generate_image` / `render_diagram`; `review_page`; and every read of each running pack, available when the pack runs — for example `jira_search` / `jira_get_issue`, `list_mrs` / `get_mr` / `search_code` / `review_context` / `get_job_log`, `search_gmail` / `list_chat_spaces`, `query_logs` / `list_alerts` / `k8s_status` | The plugins of meeseek (`mcp_server.plugin_tools`): every registry tool that changes nothing outside the outputs of this machine, and every pack read. They look up the context of the team, draw (Gemini images, Mermaid), and let Gemini examine a page that an agent built. Each one is one stateless call, with no agent turn behind it. A Claude session that meeseek gives work to can use these plugins, and nothing else from meeseek |
 | `list_outputs` | Reports, reviews, pages and pictures (also `outputs://` resources) |
 | `update_mr` / `create_mr` / `comment_mr` / `comment_mr_lines` / `reply_mr_comment` | The MR writes of the GitLab pack, with no routing turn (`mcp_server._DIRECT_WRITE_TOOLS`; available when the pack runs) |
 
@@ -679,6 +680,25 @@ sessions, the agent only reads and writes drafts (`runtime/inbox.py`):
 
 The console polls the Inbox and shows a badge on its tab. It shows a desktop
 notification when an item starts to wait for you.
+
+**Workstreams** (`workstreams:` in project.yaml, `runtime/workstreams.py`):
+one shared context for each piece of work — a ticket, an MR or a branch.
+
+- A message that names one piece of work attaches its conversation. Each turn
+  of that conversation carries what is known: the goal, the state, the
+  decisions, the open questions and the latest events. After each turn, a
+  fast model updates the summary.
+- `ask_claude` starts its brief with the context, and continues the Claude
+  session of the workstream in place of a new one.
+- Inbox news on the ticket or MR becomes an event. A merged MR closes the
+  workstream, and its summary goes to the knowledge base notes.
+- Claude Code reads and notes the context with `workstream_get` and
+  `workstream_note`. Its prompt hook (`scripts/workstream_hook.py`) adds the
+  context when a prompt names the work, or when the session runs on a branch
+  that holds the ticket key.
+- The Work tab of the console lists the workstreams.
+
+The design is in `docs/designs/workstreams.md`.
 
 **From your phone** (`messengers:` in project.yaml, `runtime/messengers/`):
 send messages to the orchestrator from Telegram. A message is an Inbox item.

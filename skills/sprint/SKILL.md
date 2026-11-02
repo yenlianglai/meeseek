@@ -5,6 +5,7 @@ description: >
   Confluence pages. Project: {{jira_project_key}}
   Keywords: ticket, Jira, {{jira_project_key}}-, sprint, assignee, healthcheck, 進度
 model: workflow
+tools: sheets_update_values, sheets_append_or_replace
 mcp: true          # Jira/Confluence 讀寫都來自 mcp-atlassian（project.yaml tool_filter）
 ship: sprint_reports
 routes:                 # what the router sends here beyond the description
@@ -24,6 +25,7 @@ routes:                 # what the router sends here beyond the description
   `sprint in openSprints()`／`sprint in futureSprints()` 一次查到；不要先用 `jira_get_agile_boards`、
   `jira_get_sprints_from_board` 找 board 和 sprint——這兩個在這個 Jira 常回空清單，查了也是白查
 - 建立 ticket → `jira_create_issue`；掛 Epic → `jira_link_to_epic`；狀態 → `jira_transition_issue`
+- 工程管理文件（Google Sheet）要跟著更新時：先 `sheets_read_values` 讀要改的範圍，寫入前用 `ask_user` 列出要改的格子；改幾格用 `sheets_update_values`，依 ticket 號新增或更新整列用 `sheets_append_or_replace`。只能改 allow list 上的試算表。
 
 ## 開單格式
 - **project_key**: `{{jira_project_key}}`；**components**: `{{jira_component}}`（必填，用工具的

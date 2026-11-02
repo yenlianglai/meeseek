@@ -4,8 +4,8 @@ import { IconSend, Logo } from "./Icons";
 import { TurnPresence } from "./Presence";
 
 /* Who appears in the console. Without a character it is the quiet marks
-   below; with the animation module in the build (src/animation/, internal,
-   left out of the open-source release) it is the character that module
+   below; with the animation module in the build (src/animation/, internal)
+   it is the character that module
    provides from src/animation/character.tsx. Nothing else imports it, so the
    console builds and runs the same with the folder gone. */
 

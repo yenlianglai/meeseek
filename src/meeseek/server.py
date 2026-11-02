@@ -168,6 +168,19 @@ async def _daily_review():
         log.warning("[review] %s", e)
 
 
+async def _drift_report():
+    """The knowledge base's design and engineering-management documents against
+    the main repo's docs/ and code: one Inbox item when they disagree
+    (runtime/drift_report.py)."""
+    from meeseek.runtime import drift_report
+
+    try:
+        record = await asyncio.to_thread(drift_report.run)
+        log.info("[drift] %s", f"Claude compares ({record['id']})" if record else "nothing started")
+    except Exception as e:  # noqa: BLE001 — next week's run compares again
+        log.warning("[drift] %s", e)
+
+
 async def _wakes():
     """Run the wakes that have come due (runtime/wakes.py): filed retries and
     Claude follow-ups — the records a restart cannot lose."""
@@ -206,6 +219,8 @@ JOB_SCHEDULE = {
        if cfg.triggers.digest_cron and cfg.messengers.telegram else {}),
     **({"daily_review": {"func": _daily_review, "cron": cfg.triggers.review_cron}}
        if cfg.triggers.review_cron and cfg.claude.enabled else {}),
+    **({"drift_report": {"func": _drift_report, "cron": cfg.triggers.drift_cron}}
+       if cfg.triggers.drift_cron and cfg.claude.enabled else {}),
     **({"triggers": {"func": _triggers, "cron": "* * * * *"}}
        if cfg.triggers.sources
        else {}),
@@ -278,6 +293,12 @@ def create_app(enable_scheduler: bool = True) -> FastAPI:
         from meeseek.runtime import claude_agent, daily_review, wakes
 
         daily_review.install()    # warnings kept on disk for the review, and its Claude sessions heard
+        from meeseek.runtime import drift_report
+
+        drift_report.install()    # the drift report's Claude session, heard when it ends
+        from meeseek.runtime import workstreams
+
+        workstreams.install()     # Claude sessions about a piece of work fold into its workstream
 
         # Wakes first: a retry or follow-up the dead process claimed goes back
         # to pending, claude_agent.recover fires the wakes of interrupted

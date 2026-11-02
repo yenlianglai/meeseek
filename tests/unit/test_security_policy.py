@@ -41,6 +41,8 @@ APPROVED_LOCAL_WRITES = {
                                                     # meeseek 的寫入工具一律拒絕（runtime/claude_agent.py:policy）
     "task_create", "task_note", "task_update",      # 跨 turn 任務（runtime/tasks.py）——本機 cache 的 JSON 檔；
                                                     # 建立與結案在工具內以 origin 限制在 console session
+    "workstream_note",                              # 工作流的共用筆記（runtime/workstreams.py）——本機 JSON 檔，
+                                                    # 不觸外部系統；meeseek 與 Claude Code 共用同一份 context
     "remind_me",                                    # 提醒（runtime/wakes.py 的 remind wake）——本機 wake 記錄；
                                                     # 到期只推一句話到使用者自己的 Telegram，不起 turn、不吃預算
 }
@@ -242,6 +244,9 @@ class TestMcpSurfaceIsDeclared:
         "kb_grep", "kb_read", "kb_list",
                 "fetch_url",
         "generate_image", "render_diagram", "review_page",
+        # 工作流（runtime/workstreams.py）：一張票／MR／branch 一份共用 context。給 Claude Code 讀與記，
+        # 讓它接手時不必重問；server 只綁 127.0.0.1（SECURITY.md）。
+        "workstream_get", "workstream_note",
         # A pack's reads, and the MR writes in mcp_server._DIRECT_WRITE_TOOLS, join
         # once the pack is up (mcp_server.add_pack_tools; tested in
         # test_mcp_adapter.py and below) — not here, where no pack runs.

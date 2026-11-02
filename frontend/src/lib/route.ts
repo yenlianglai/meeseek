@@ -6,7 +6,7 @@
  *  Chat (its Trace beside it), an Inbox item in Inbox.
  *
  *    #/chat/<session>?as=<owner>     #/trace/<session>?as=<owner>
- *    #/inbox/<item>    #/usage?days=30    #/context/<kind>/<path>
+ *    #/inbox/<item>    #/work/<id>    #/usage?days=30    #/context/<kind>/<path>
  *
  *  `as` names a session owner other than the console's own (an MCP caller). */
 
@@ -15,6 +15,7 @@ export const CONSOLE_OWNER = "webui";
 export type Route =
   | { view: "chat" | "trace"; session?: string; owner?: string }
   | { view: "inbox"; item?: string }
+  | { view: "work"; id?: string }
   | { view: "usage"; days?: number }
   | { view: "context"; kind?: ContextKind; path?: string };
 
@@ -39,6 +40,7 @@ export function parseRoute(hash: string): Route {
     return { view, session: parts[1], owner: owner === CONSOLE_OWNER ? undefined : owner };
   }
   if (view === "inbox") return { view, item: parts[1] };
+  if (view === "work") return { view, id: parts[1] };
   if (view === "usage") {
     const days = Number(params.get("days"));
     return { view, days: Number.isFinite(days) && days > 0 ? days : undefined };
@@ -60,6 +62,8 @@ export function formatRoute(r: Route): string {
       return `#/${r.view}${seg(r.session)}${r.owner && r.owner !== CONSOLE_OWNER ? `?as=${encodeURIComponent(r.owner)}` : ""}`;
     case "inbox":
       return `#/inbox${seg(r.item)}`;
+    case "work":
+      return `#/work${seg(r.id)}`;
     case "usage":
       return `#/usage${r.days ? `?days=${r.days}` : ""}`;
     case "context":

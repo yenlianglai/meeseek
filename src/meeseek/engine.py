@@ -152,11 +152,13 @@ def _reads(media: bool) -> list[ToolSpec]:
 # --- agents -----------------------------------------------------------------------
 
 def _context(agent: str | None, t: TurnState) -> str:
-    """What every turn adds after the agent's own instruction: memory, open tasks."""
+    """What every turn adds after the agent's own instruction: memory, open
+    tasks, and the workstream the conversation is about."""
     from meeseek.context.memory import memory_instruction
-    from meeseek.runtime import tasks
+    from meeseek.runtime import tasks, workstreams
 
-    return "\n\n".join(s for s in (memory_instruction(agent), tasks.instruction(session_id=t.session, user_id=t.by)) if s)
+    return "\n\n".join(s for s in (memory_instruction(agent), tasks.instruction(session_id=t.session, user_id=t.by),
+                                    workstreams.instruction(t.session)) if s)
 
 
 class _Bundled:
@@ -562,14 +564,42 @@ async def turn(session: str, text: str, *, by: str = "webui", watched: bool = Tr
         _carry_over(session, by)
         files = [Attachment(mime=mime, ref=blobs().put(data)) for mime, data in attachments]
         _note_followup(session, text, by)
+        _workstream(session, text, by)
         done, start_with = await _slash(session, text, by, observe) if not files else (None, "")
         if done is None:
             done = await (await runner()).run(session, text, watched=watched, by=by, observe=observe,
                                               start_with=start_with, attachments=files, on_retry=on_retry)
         _record(session, done, by)
+        _workstream_after(session, text, done, by)
         return done
     finally:
         _ORIGIN.reset(token)
+
+
+def _workstream(session: str, text: str, by: str) -> None:
+    """Attach the conversation to the piece of work its message names, so this
+    turn and the next carry what is known about it (runtime/workstreams.py)."""
+    from meeseek.runtime import workstreams
+    from meeseek.runtime.replaying import replaying
+
+    if replaying(by):
+        return
+    try:
+        workstreams.on_message(session, text, by)
+    except Exception:  # noqa: BLE001 — a turn never fails for its workstream
+        logging.getLogger(__name__).warning("engine: workstream lookup failed", exc_info=True)
+
+
+def _workstream_after(session: str, text: str, done: TurnResult, by: str) -> None:
+    from meeseek.runtime import workstreams
+    from meeseek.runtime.replaying import replaying
+
+    if replaying(by):
+        return
+    try:
+        workstreams.after_turn(session, text, done.reply, by)
+    except Exception:  # noqa: BLE001
+        logging.getLogger(__name__).warning("engine: workstream update failed", exc_info=True)
 
 
 def _carry_over(session: str, by: str) -> None:

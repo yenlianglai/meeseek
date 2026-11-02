@@ -137,6 +137,8 @@ def _poll_pack(name: str, spec: dict, state: dict, now: float) -> list[dict]:
     for a in data.get("answered") or []:
         if a.get("group") and (n := inbox.answered(a["group"], float(a.get("at") or now))):
             logger.info("[triggers] %s: %d item(s) settled, you replied in %s", name, n, a["group"])
+        if a.get("why") in ("merged", "closed"):
+            _workstream_event(a["group"], f"MR {a['why']}", "gitlab", "merged" if a["why"] == "merged" else "")
     keep = ("key", "title", "sender", "received_at", "link", "body", "meta", "kind", "group")
     return [{"source": name, **{k: item[k] for k in keep if k in item}}
             for item in data.get("items") or [] if item.get("key") and not inbox.by_key(item["key"])]
@@ -260,6 +262,24 @@ def decide(candidate: dict) -> dict:
     return triage(candidate["source"], candidate["sender"], candidate["title"], candidate["body"])
 
 
+def _workstream_event(group: str, text: str, by: str, kind: str = "") -> None:
+    """News on a ticket or MR, on its workstream when it has one (runtime/workstreams.py)."""
+    from meeseek.runtime import workstreams
+
+    try:
+        workstreams.on_event(group, text, by, kind)
+    except Exception:  # noqa: BLE001 — the Inbox goes on without it
+        logger.warning("[triggers] workstream event on %s failed", group, exc_info=True)
+
+
+def _news(candidate: dict) -> None:
+    group = inbox.group_of(candidate)
+    if group.startswith(("mr:", "jira:")):
+        kind = "review" if group.startswith("mr:") else "ticket"
+        _workstream_event(group, f"{candidate.get('sender') or '?'}: {candidate.get('title', '')}",
+                          candidate.get("source", ""), kind)
+
+
 async def _take(candidate: dict) -> dict | None:
     """File one candidate, triage it, start its turn if it needs one. A
     message in a conversation that has an item already updates that item."""
@@ -268,6 +288,7 @@ async def _take(candidate: dict) -> dict | None:
     if notice := notice_group(candidate):
         return _notice(candidate, notice)
     candidate = chat_mr(candidate) or candidate
+    _news(candidate)
     group = inbox.group_of(candidate)
     if earlier := inbox.by_group(group):
         return await _add_to(earlier[0], candidate)

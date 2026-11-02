@@ -88,6 +88,40 @@ export interface Question {
   recommended?: string;
 }
 
+/** A workstream as the Work page lists it (runtime/workstreams.py rows()). */
+export interface WorkstreamRow {
+  id: string;
+  key: string;
+  aliases: string[];
+  title: string;
+  status: "open" | "closed";
+  state: string;
+  next: string;
+  updated: number;
+  sessions: string[];
+  claude: string[];
+  events: number;
+}
+
+/** One workstream, whole, with its context as a turn carries it. */
+export interface Workstream {
+  id: string;
+  key: string;
+  aliases: string[];
+  title: string;
+  status: "open" | "closed";
+  goal: string;
+  state: string;
+  next: string;
+  decisions: string[];
+  questions: string[];
+  events: { at: number; by: string; text: string }[];
+  sessions: string[];
+  claude: { session_id: string; cwd: string; at: number }[];
+  closed: { at: number; why: string } | null;
+  context: string;
+}
+
 /** Learning-page shapes returned by `/learning_api/*`. */
 export type RuleVerdict = "working" | "redundant" | "not_followed" | "unknown" | "no_case";
 

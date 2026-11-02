@@ -38,9 +38,11 @@ from meeseek.config.schema import (
     TriggersConfig,
     MessengersConfig,
     ClaudeConfig,
+    SpecReviewConfig,
     UsageConfig,
     LearningConfig,
     WorkflowsConfig,
+    WorkstreamsConfig,
 )
 
 from meeseek.config.paths import CHECKOUT, PROJECT_ROOT, default_root  # single source of truth
@@ -189,6 +191,8 @@ def build_config(raw: dict[str, Any] | None = None) -> Config:
                                coach_meetings=_coach_meetings((raw.get("triggers") or {}).get("coach_meetings"))),
         messengers=_from_mapping(MessengersConfig, raw.get("messengers"), "messengers"),
         claude=_from_mapping(ClaudeConfig, raw.get("claude"), "claude"),
+        workstreams=_from_mapping(WorkstreamsConfig, raw.get("workstreams"), "workstreams"),
+        spec_review=_from_mapping(SpecReviewConfig, raw.get("spec_review"), "spec_review"),
         mcp_servers=_mcp_servers(raw.get("mcp_servers")),
     )
     _export_env(cfg)

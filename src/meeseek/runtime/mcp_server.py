@@ -616,11 +616,14 @@ def plugin_tools() -> tuple[str, ...]:
     Claude sessions meeseek hands work to get these; the Claude hand-off tools
     themselves are excluded, and so are reading meeseek's own past
     conversations (registry.SESSION_TOOLS), its tasks (registry.TASK_TOOLS) and
-    its reminders (registry.REMIND_TOOLS — an MCP caller is not the person)."""
-    from meeseek.tools.registry import CLAUDE_TOOLS, GENERAL_TOOLS, REMIND_TOOLS, SESSION_TOOLS, TASK_TOOLS
+    its reminders (registry.REMIND_TOOLS — an MCP caller is not the person)
+    and the spec review (registry.SPEC_TOOLS — model calls an MCP caller would
+    spend unbounded)."""
+    from meeseek.tools.registry import (CLAUDE_TOOLS, GENERAL_TOOLS, REMIND_TOOLS, SESSION_TOOLS, SPEC_TOOLS,
+                                        TASK_TOOLS)
 
     own = tuple(n for n in GENERAL_TOOLS
-                if n not in CLAUDE_TOOLS + SESSION_TOOLS + TASK_TOOLS + REMIND_TOOLS)
+                if n not in CLAUDE_TOOLS + SESSION_TOOLS + TASK_TOOLS + REMIND_TOOLS + SPEC_TOOLS)
     return own + tuple(n for n in pack_reads() if n not in own)
 
 

@@ -1,7 +1,11 @@
-"""meeseek's Google Workspace pack: Gmail, Chat, Drive and Calendar, read-only,
-as an MCP server (`python -m meeseek_pack_google`).
+"""meeseek's Google Workspace pack: Gmail, Chat, Drive and Calendar read-only, and
+Sheets — read any, write the allow-listed (`sheets_writable`) — as an MCP server
+(`python -m meeseek_pack_google`).
 
-    agents read     search_gmail, get_gmail_thread, list_chat_spaces, get_chat_messages
+    agents read     search_gmail, get_gmail_thread, list_chat_spaces, get_chat_messages,
+                    sheets_read_values
+    agents write    sheets_update_values, sheets_append_or_replace (granted per skill,
+                    each a held write; only spreadsheets in sheets_writable)
     sources         gmail_poll, chat_poll, calendar_poll (meeseek's trigger loop)
     internal        drive_read, drive_sync, meeting_recordings, meetings,
                     recording_info, recording_fetch, auth_status — for
@@ -29,7 +33,7 @@ _POLL = {"since": {"type": "number"}, "state": {"type": "object"}}
 def tools() -> list[Tool]:
     # Here, not at import: `python -m meeseek_pack_google.auth` loads this
     # package first, and must not find its own module imported already.
-    from meeseek_pack_google import drive, drive_sync, sources
+    from meeseek_pack_google import drive, drive_sync, sheets, sources
     from meeseek_pack_google.gchat import get_chat_messages, list_chat_spaces
     from meeseek_pack_google.gmail import get_gmail_thread, search_gmail
 
@@ -65,6 +69,49 @@ def tools() -> list[Tool]:
                 "space_name": {"type": "string", "description": "Space resource name, e.g. 'spaces/AAAA1234'"},
                 "max_results": {"type": "integer", "description": "Max messages (default 25)"},
             }, ["space_name"]),
+        ),
+        # --- Google Sheets: read any; write only the allow-listed (sheets_writable) ---
+        Tool(
+            name="sheets_read_values",
+            description=("Read a Google Sheet range (A1 notation, e.g. \"'Tasks'!A1:F40\" or a sheet name) as rows; "
+                         "with an empty range, the spreadsheet's sheet names. Says whether it is writable."),
+            fn=sheets.sheets_read_values,
+            parameters=params({
+                "spreadsheet": {"type": "string", "description": "Spreadsheet id or link"},
+                "range": {"type": "string", "description": "A1 range; empty for the sheet names"},
+            }, ["spreadsheet"]),
+        ),
+        Tool(
+            name="sheets_update_values",
+            description=("Write values to ranges of an allow-listed Google Sheet in one call. Read the range first; "
+                         "write only the cells that change."),
+            fn=sheets.sheets_update_values,
+            parameters=params({
+                "spreadsheet": {"type": "string", "description": "Spreadsheet id or link"},
+                "data": {"type": "array", "description": "[{range, values}] — values a list of rows", "items": {
+                    "type": "object", "properties": {
+                        "range": {"type": "string", "description": "A1 range, e.g. \"'Tasks'!C7:D7\""},
+                        "values": {"type": "array", "items": {"type": "array", "items": {}}}},
+                    "required": ["range", "values"]}},
+                "value_input_option": {"type": "string", "description": "USER_ENTERED (default: as typed) or RAW"},
+            }, ["spreadsheet", "data"]),
+            writes=True,
+        ),
+        Tool(
+            name="sheets_append_or_replace",
+            description=("Upsert whole rows in a sheet of an allow-listed Google Sheet by a key column: a row whose key "
+                         "is already in that column replaces it, any other is appended after the last row."),
+            fn=sheets.sheets_append_or_replace,
+            parameters=params({
+                "spreadsheet": {"type": "string", "description": "Spreadsheet id or link"},
+                "sheet": {"type": "string", "description": "Sheet (tab) name"},
+                "key_column": {"type": "string", "description": "Column letter holding each row's key, e.g. A"},
+                "rows": {"type": "array", "description": "Rows from column A, each with its key in key_column",
+                         "items": {"type": "array", "items": {}}},
+                "header_rows": {"type": "integer", "description": "Rows at the top that are not data (default 1)"},
+                "value_input_option": {"type": "string", "description": "USER_ENTERED (default) or RAW"},
+            }, ["spreadsheet", "sheet", "key_column", "rows"]),
+            writes=True,
         ),
         # --- sources: what arrived on its own ---
         Tool("gmail_poll", "New mail matching `query` (a trigger source).", sources.gmail_poll,

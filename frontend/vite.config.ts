@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // The animation lab (lab.html) is a page of the animation module: built only
-// where that module is (src/animation/, left out of the open-source release).
+// where that module is (src/animation/).
 const pages = { main: "index.html", ...(existsSync("lab.html") ? { lab: "lab.html" } : {}) };
 
 // The server (port 8787) owns all data; the console is a static SPA.

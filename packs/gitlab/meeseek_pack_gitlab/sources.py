@@ -82,13 +82,13 @@ def mr_poll(since: float = 0, state: dict | None = None) -> dict:
         group = f"mr:{ref}"
         ended = max(_ts(mr.get("merged_at")), _ts(mr.get("closed_at")))
         if mr.get("state") in ("merged", "closed") and ended >= since:
-            answered.append({"group": group, "at": ended})
+            answered.append({"group": group, "at": ended, "why": mr["state"]})
         notes = [n for n in _get(f"projects/{mr['project_id']}/merge_requests/{mr['iid']}/notes"
                                  f"?sort=asc&order_by=created_at&per_page=100")
                  if _ts(n.get("created_at")) > since]
         mine = [n for n in notes if _mine_counts(n, me)]
         if mine:
-            answered.append({"group": group, "at": _ts(mine[-1]["created_at"])})
+            answered.append({"group": group, "at": _ts(mine[-1]["created_at"]), "why": "you"})
         after = _ts(mine[-1]["created_at"]) if mine else 0.0
         if mr.get("state") != "opened":
             continue

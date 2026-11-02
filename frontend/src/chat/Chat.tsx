@@ -195,6 +195,7 @@ export function Chat(props: {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const stickToBottom = useRef(true);
+  const lastTop = useRef(0);
 
   const palette = palDismissed ? [] : matchCommands(draft);
   // Stable, so the memoized thread is not re-rendered by every parent render.
@@ -253,10 +254,49 @@ export function Chat(props: {
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  // A conversation opens at its end: what the last one's scroll did is not the user's.
+  useEffect(() => {
+    stickToBottom.current = true;
+    lastTop.current = 0;
+  }, [props.sessionId]);
+
+  // Content also grows with no new message — the turn's row once the box has
+  // landed, an image or a diagram that renders late — so follow every growth
+  // of the thread while the user is at the bottom.
+  const hasThread = messages.length > 0;
+  useEffect(() => {
+    const el = scrollRef.current;
+    const thread = el?.firstElementChild;
+    if (!el || !thread) return;
+    const follow = new ResizeObserver(() => {
+      if (stickToBottom.current) el.scrollTop = el.scrollHeight;
+    });
+    follow.observe(thread);
+    return () => follow.disconnect();
+  }, [hasThread]);
+
+  // Moving up lets go of the bottom; moving down to within 80px of it holds on
+  // again. (A distance test alone re-held a view the user had just nudged up.)
   function onScroll() {
     const el = scrollRef.current;
     if (!el) return;
-    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (el.scrollTop < lastTop.current - 1) stickToBottom.current = false;
+    else if (near) stickToBottom.current = true;
+    lastTop.current = el.scrollTop;
+  }
+
+  // The user moving up lets go of the bottom at once. Waiting for onScroll
+  // to see 80px of distance let a paint in between pull the view back down,
+  // so during a run a trackpad's first few pixels never got anywhere.
+  function letGo() {
+    stickToBottom.current = false;
+  }
+  function onWheel(e: React.WheelEvent) {
+    if (e.deltaY < 0) letGo();
+  }
+  function onScrollKey(e: React.KeyboardEvent) {
+    if (["ArrowUp", "PageUp", "Home"].includes(e.key)) letGo();
   }
 
   function send(text?: string) {
@@ -318,7 +358,8 @@ export function Chat(props: {
           </div>
         </div>
       ) : (
-        <div className="chat-scroll" ref={scrollRef} onScroll={onScroll}>
+        <div className="chat-scroll" ref={scrollRef} onScroll={onScroll} onWheel={onWheel} onTouchMove={letGo}
+             onKeyDown={onScrollKey}>
           <Thread
             messages={messages}
             streaming={streaming}

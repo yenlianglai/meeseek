@@ -48,8 +48,6 @@ evals/harness/results/
 recorder/meeting-recorder
 
 
-# the open-source check's list names people and internal things: never committed
-.oss-forbidden
 
 # the motion studio (frontend/motion/README.md): its rounds and the unpicked candidates stay on this machine
 frontend/motion/rounds/

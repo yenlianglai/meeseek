@@ -9,6 +9,10 @@
     POST   /api/sessions/{id}/stop       cancel the running turn (it can be resumed)
     GET    /api/sessions/{id}/stream     watch the running turn: what it has sent, then live; 204 when idle
     GET    /api/files/{ref}              a file a message brought
+    GET    /api/workstreams              the open pieces of work (?closed=1: all), latest first
+    GET    /api/workstreams/lookup       ?text=&branch=&claude_session=&cwd= → the one a
+                                         Claude Code prompt is about, with its context
+    GET    /api/workstreams/{id}         one, whole
 
 A turn keeps running when its stream is dropped: closing the console, or
 switching to another session, only stops watching. Only /stop cancels. A
@@ -205,6 +209,30 @@ def router() -> APIRouter:
         engine.store().delete(sid)
         history.delete_legacy(sid, user)
         return Response(status_code=204)
+
+    @r.get("/workstreams")
+    def list_workstreams(closed: bool = False) -> list[dict]:
+        from meeseek.runtime import workstreams
+
+        return workstreams.rows(include_closed=closed)
+
+    @r.get("/workstreams/lookup")
+    def lookup_workstream(text: str = "", branch: str = "", claude_session: str = "", cwd: str = "") -> dict:
+        """What Claude Code's prompt hook adds (scripts/workstream_hook.py): the
+        workstream the prompt or its branch names, its Claude session attached."""
+        from meeseek.runtime import workstreams
+
+        ws = workstreams.lookup(text[:4000], branch, claude_session, cwd)
+        return {"id": ws["id"], "key": ws["key"], "context": workstreams.render(ws)} if ws else {}
+
+    @r.get("/workstreams/{ws_id}")
+    def get_workstream(ws_id: str) -> dict:
+        from meeseek.runtime import workstreams
+
+        ws = workstreams.get(ws_id)
+        if ws is None:
+            raise HTTPException(404, "no such workstream")
+        return {**ws, "context": workstreams.render(ws)}
 
     @r.get("/files/{ref}")
     def get_file(ref: str) -> Response:

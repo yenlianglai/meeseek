@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 
-from meeseek.runtime import claude_agent
+from meeseek.runtime import claude_agent, goldfish
 
 _WAIT_MAX = 900
 
@@ -56,14 +56,46 @@ def ask_claude(prompt: str, cwd: str = "", session_id: str = "", wait_seconds: i
                _origin: dict | None = None) -> str:
     """Hand work to Claude Code and wait up to `wait_seconds` for its answer."""
     wait = max(5, min(int(wait_seconds or 240), _WAIT_MAX))
+    own = prompt
+    prompt, session_id, _origin = _with_workstream(prompt, cwd, session_id, _origin)
+    reviewed = ""
+    if goldfish.is_spec(own):        # the brief alone decides; the workstream context is reviewed with it
+        g = goldfish.gate(prompt, cwd=cwd, key=_origin.get("session_id", ""),
+                          workstream=_origin.get("workstream", ""))
+        if g.send_back:
+            return g.send_back
+        prompt, reviewed = g.brief, g.note + "\n\n"
     try:
         record = claude_agent.start(prompt, cwd=cwd, session_id=session_id, origin=_origin, awaited_for=wait)
     except ValueError as e:
-        return f"Claude did not start: {e}"
+        return f"{reviewed}Claude did not start: {e}"
     record = claude_agent.wait(record["id"], wait)
     if claude_agent.running(record["id"]):
         _file_followup(record, _origin)
-    return _report(record)
+    return reviewed + _report(record)
+
+
+def _with_workstream(prompt: str, cwd: str, session_id: str, origin: dict | None) -> tuple[str, str, dict]:
+    """The piece of work the hand-over is about (runtime/workstreams.py): its
+    context leads the brief, and with no session named, its Claude session in
+    the same folder carries on rather than a new one starting."""
+    from meeseek.runtime import workstreams
+
+    origin = dict(origin or {})
+    try:
+        ws = workstreams.for_session(origin.get("session_id", "")) or workstreams.resolve(
+            workstreams.keys_in(prompt), create=False)
+    except Exception:  # noqa: BLE001 — the hand-over goes ahead without it
+        ws = None
+    if ws is None or not workstreams._enabled():
+        return prompt, session_id, origin
+    origin["workstream"] = ws["id"]
+    if not session_id:
+        prior = workstreams.claude_session(ws, cwd)
+        record = claude_agent.record_of(prior) if prior else None
+        if prior and not (record and claude_agent.running(record["id"])):
+            session_id = prior
+    return f"{workstreams.render(ws)}\n\n---\n\n{prompt}", session_id, origin
 
 
 def _file_followup(record: dict, origin: dict | None) -> None:

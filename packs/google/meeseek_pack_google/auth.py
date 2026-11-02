@@ -47,11 +47,15 @@ WORKSPACE_SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
 
-# What the gcloud login must grant: both halves. Kept separate from
-# WORKSPACE_SCOPES so the "Workspace is read-only at the credential layer"
-# invariant (tests/test_google_scopes.py) stays assertable — cloud-platform
-# is deliberately not .readonly, and must not leak into the Workspace set.
-LOGIN_SCOPES = [CLOUD_PLATFORM_SCOPE, *WORKSPACE_SCOPES]
+# The one Workspace write: Sheets, for the spreadsheets the pack's
+# `sheets_writable` allow list names (sheets.py refuses every other one).
+SHEETS_WRITE_SCOPE = "https://www.googleapis.com/auth/spreadsheets"
+
+# What the gcloud login must grant. Kept apart from WORKSPACE_SCOPES so "the
+# Workspace reads are read-only" stays assertable (tests/test_google_scopes.py):
+# cloud-platform is not .readonly, and the Sheets write scope is the one
+# write, named on its own.
+LOGIN_SCOPES = [CLOUD_PLATFORM_SCOPE, *WORKSPACE_SCOPES, SHEETS_WRITE_SCOPE]
 
 _TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 

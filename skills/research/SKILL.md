@@ -8,6 +8,7 @@ description: >
   KB correction.
   Keywords: research, 調研, 研究, brainstorm, 發想, idea, 方案, survey, 分析, 文件, document, PRD, 設計, 知識庫, refine, 補充, 更正, 信, email, 郵件, Gmail, Chat 訊息, 聊天記錄
 model: workflow
+tools: sheets_update_values, sheets_append_or_replace
 ship: reports
 search_limits:          # per-turn: past N the result asks you to converge; past 2N it is blocked
   kb_grep: 6
@@ -62,10 +63,24 @@ routes:                 # what the router sends here beyond the description
 
 需要圖時：一個方向一張概念圖，方向選定後才畫細節；技術調研報告不配圖。
 
+## PRD／設計文件：存檔前先過 goldfish review
+要存成 PRD、設計文件或規格（給人或 Claude 照著實作的文件）時，`ship_output` 之前先用 `review_spec(content=整份草稿)` 讓三個零脈絡的 reviewer 看：能否只靠文件復述（comprehension）、是否夠簡單、有沒有重造既有的東西（zoom-out）、能否直接開工（路徑、介面、測試）。
+- 有 blocker：修掉（major 便宜就一起修），再對整份修訂稿呼叫一次 `review_spec`——只有這一次 re-review。
+- re-review 後（或第一次就沒有 blocker）直接存檔；還剩的 findings 寫進文件最後的「Accepted trade-offs」段落，不要再審。
+- 工具說 review 沒跑成時，照實告訴使用者「這份沒有經過 review」，不要說審過。
+研究報告、brainstorm 不用過這關。
+
 ## KB 維護
 - 用 `kb_grep` 確認問題真的存在。新資訊 → `save_refinement`（topic 用小寫英文加底線，如 `emotion_threshold`）；修正既有文件 → `update_kb_file`。
 - 兩邊說法衝突：列出「KB 說 X（文件、段落、日期）／你說 Y」，用 `ask_user` 問哪個正確，再更新。
 - 一定把新資訊存進 KB，回報實際寫入的檔案路徑。`sync` 只在使用者明確要求時呼叫。
+
+## Google Sheets（工程管理文件等）
+- 讀任何試算表：`sheets_read_values`（範圍空白先列出分頁名稱；回傳會說這份能不能寫）。
+- 只能改 allow list（`sheets_writable`）上的試算表。改之前先讀要改的範圍，確認列與欄對得上，只寫有變的格子：
+  - 改幾格 → `sheets_update_values`（一次送多個範圍）。
+  - 整列新增或依 key（例如 ticket 號）更新 → `sheets_append_or_replace`。
+- 寫入前用 `ask_user` 把「哪個分頁、哪幾格、從什麼改成什麼」列給使用者確認。寫完回報實際更新的範圍；KB 裡的副本在下次 Drive 同步後更新。
 
 ## Gmail／Chat（唯讀）
 `search_gmail`（Gmail 搜尋語法，如 `from:` `newer_than:7d`）→ `get_gmail_thread` 讀全文；`list_chat_spaces` → `get_chat_messages`。引用時附寄件人與日期。
@@ -74,4 +89,4 @@ routes:                 # what the router sends here beyond the description
 需要 K8s／log → infra_agent；sprint 管理、開單 → sprint_agent；code review 或改程式 → code_agent。
 
 ## 完成標準
-完整報告已用 `ship_output` 存檔，每個結論都有工具回傳的證據；查不到就明說。KB 寫入以工具回傳的檔案路徑為準。
+完整報告已用 `ship_output` 存檔，每個結論都有工具回傳的證據；查不到就明說。PRD／設計文件存檔前已過 `review_spec`（或明說它沒跑成）。KB 寫入以工具回傳的檔案路徑為準。

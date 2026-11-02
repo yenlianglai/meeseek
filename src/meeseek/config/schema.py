@@ -25,8 +25,10 @@ __all__ = [
     "TriggersConfig",
     "MessengersConfig",
     "ClaudeConfig",
+    "SpecReviewConfig",
     "UsageConfig",
     "WorkflowsConfig",
+    "WorkstreamsConfig",
 ]
 
 
@@ -77,6 +79,37 @@ class LearningConfig:
 
 
 @dataclass
+class WorkstreamsConfig:
+    """One shared context per piece of work — a ticket, an MR, a branch
+    (runtime/workstreams.py): meeseek's turns and Claude Code's sessions about it
+    read and update the same context instead of each starting from nothing."""
+    enabled: bool = True
+    # A short model summary of the workstream after each turn about it (one
+    # fast-model call); off keeps the events alone.
+    summarize: bool = True
+    # The characters of workstream context a turn or a Claude brief carries.
+    context_chars: int = 2500
+    # Outside events that also continue the workstream's Claude Code session:
+    # any of "merged", "review" (others' comments on an MR), "ticket" (Jira
+    # news). Empty: events are only recorded on the workstream.
+    route_to_claude: list[str] = field(default_factory=list)
+
+
+@dataclass
+class SpecReviewConfig:
+    """The goldfish review of a spec (runtime/goldfish.py): three reviewers
+    with no context but the document and what it references — comprehension,
+    zoom-out (simplicity, reuse), implementation readiness — each one model call."""
+    # An ask_claude brief this long or longer (characters, the workstream
+    # context not counted) is a spec: it is reviewed before Claude gets it.
+    # 0 = briefs are never reviewed. The research skill's review_spec tool
+    # works either way.
+    brief_chars: int = 2500
+    # The reviewers' model; empty = models.workflow.
+    model: str = ""
+
+
+@dataclass
 class WorkflowsConfig:
     meeting_notes: bool = True
     # What /plan reads before it plans the day: [{label, tool, args}], each a
@@ -114,6 +147,16 @@ class TriggersConfig:
     # a Claude session on a new branch (runtime/daily_review.py). Nothing
     # filed on a day with nothing new. "" = off.
     review_cron: str = "30 18 * * 1-5"
+    # When the drift report runs (cron, local time; weekly is enough): Claude
+    # Code compares the knowledge base's design and engineering-management
+    # documents with the main repo's docs/ and code, read only — one Inbox item
+    # that lists each inconsistency, none when there is none
+    # (runtime/drift_report.py). It counts against daily_turns. "" = off.
+    drift_cron: str = "0 9 * * 1"
+    # The knowledge-base documents the drift report compares: parts of their
+    # paths, e.g. "engineering-plan" or "api-spec". Empty = every Drive document
+    # except meeting notes, the newest first, at most drift_report.MAX_DOCS.
+    drift_docs: list[str] = field(default_factory=list)
     # Local hours Telegram's own pushes sit out, e.g. "23-8" (11pm–8am): a
     # proposal, coach report or Claude result waits until the hours end and is
     # sent then, once. Replies to a message you just sent go out regardless.
@@ -268,5 +311,7 @@ class Config:
     triggers: TriggersConfig = field(default_factory=TriggersConfig)
     messengers: MessengersConfig = field(default_factory=MessengersConfig)
     claude: ClaudeConfig = field(default_factory=ClaudeConfig)
+    workstreams: WorkstreamsConfig = field(default_factory=WorkstreamsConfig)
+    spec_review: SpecReviewConfig = field(default_factory=SpecReviewConfig)
     mcp_servers: list[MCPServerConfig] = field(default_factory=list)
 

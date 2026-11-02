@@ -77,6 +77,11 @@ triggers:
   digest_cron: "0 10,16 * * 1-5"   # when the Inbox digest goes to the phone: unseen answers / held writes, summed up ("" = off)
   review_cron: "30 18 * * 1-5"     # the daily review: the day's errors, failed turns and corrections, to Claude Code for
                                    # ranked fixes — one Inbox item; an approved fix is a Claude session on a new branch ("" = off)
+  drift_cron: "0 9 * * 1"          # the drift report, weekly: Claude Code compares the KB's design / engineering-management
+                                   # documents with the main repo's docs/ and code, read only — one Inbox item listing each
+                                   # inconsistency, nothing when there is none; counts against daily_turns ("" = off)
+  drift_docs: []                   # parts of the KB paths it compares, e.g. ["engineering-plan", "api-spec"];
+                                   # [] = every Drive document except meeting notes, the newest first (at most 12)
 
 # Claude Code as an agent meeseek hands work to (runtime/claude_agent.py), on
 # this machine's Claude Code login. It works in the folder it is given, in auto
@@ -88,6 +93,27 @@ claude:
   model: ""                     # empty = Claude Code's default
   max_turns: 200
   page_review_model: ""         # review_page's eyes; empty = models.multimodal
+
+# One shared context per piece of work — a ticket, an MR or a branch
+# (runtime/workstreams.py). meeseek's turns and Claude Code's sessions about it
+# read and update the same notes: goal, state, decisions, open questions,
+# latest events. Claude Code's prompt hook: scripts/workstream_hook.py.
+workstreams:
+  enabled: true
+  summarize: true               # a fast-model summary after each turn on a workstream
+  context_chars: 2500           # how much of it a turn or a Claude brief carries
+  route_to_claude: []           # events that also continue its Claude session: merged, review, ticket
+
+# The goldfish review of a spec (runtime/goldfish.py): three reviewers that see
+# only the document and the files and links it references — comprehension,
+# zoom-out (simplicity, YAGNI, reuse), implementation readiness. A long
+# ask_claude brief is reviewed before Claude gets it: blockers go back to the
+# agent once, then the brief goes with the rest as accepted trade-offs. The
+# research skill reviews a PRD or design with review_spec before ship_output.
+# One review is three model calls; a re-review, three more.
+spec_review:
+  brief_chars: 2500             # a brief this long or longer (workstream context not counted) is reviewed (0 = never)
+  model: ""                     # the reviewers' model; empty = models.workflow
 
 # Talk to the orchestrator from your phone. Answers come back to the chat (via
 # Telegram's servers); writes wait for your Approve there. Token in .env.
@@ -160,6 +186,8 @@ mcp_servers:
         - "your_doc_id"
       exclude_file_ids: []        # files under those folders that must not be mirrored (and are removed locally)
       meetings_folder_id: ""      # optional: folder of meeting recordings (/meetings)
+      sheets_writable: []         # optional: spreadsheets (ids or links) the Sheets write tools may change;
+                                  # every other one is read only, and each write waits for your yes
 
   gcp:
     pack: gcp                     # packs/gcp — logs, GKE pods and events, Monitoring alerts (ADC)

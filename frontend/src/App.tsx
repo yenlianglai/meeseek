@@ -24,6 +24,7 @@ import { OutputProvider } from "./chat/OutputViewer";
 import { Sidebar, sourceLabel } from "./views/Sidebar";
 import { Trace } from "./views/Trace";
 import { Usage } from "./views/Usage";
+import { Work } from "./views/Work";
 import { Context } from "./views/Context";
 import { ConversationFolder, foldEvents } from "./lib/fold";
 import { NavContext, useHashRoute } from "./lib/nav";
@@ -416,7 +417,7 @@ export default function App() {
   const ownerParam = source === CONSOLE_USER ? undefined : source;
 
   /** A top tab returns to where you last were in it. */
-  function goTo(v: "chat" | "inbox" | "usage" | "context") {
+  function goTo(v: "chat" | "inbox" | "work" | "usage" | "context") {
     if (v === "chat") {
       const back = lastIn.current.trace ?? lastIn.current.chat;
       navigate(back && isSessionView(back) ? back : { view: "chat", session: activeId ?? undefined, owner: ownerParam });
@@ -464,6 +465,9 @@ export default function App() {
         <button aria-pressed={view === "inbox"} onClick={() => goTo("inbox")}>
           <IconInbox /> Inbox
           {inbox.waiting > 0 && <span className="badge" aria-label={`${inbox.waiting} waiting`}>{inbox.waiting}</span>}
+        </button>
+        <button aria-pressed={view === "work"} onClick={() => goTo("work")} title="Work shared by meeseek and Claude Code">
+          <IconTrace /> Work
         </button>
         <button aria-pressed={view === "usage"} onClick={() => goTo("usage")}>
           <IconChart /> Usage
@@ -517,6 +521,8 @@ export default function App() {
           <Trace events={events} />
         ) : route.view === "inbox" ? (
           <Inbox itemId={route.item} feed={inbox} />
+        ) : route.view === "work" ? (
+          <Work id={route.id} />
         ) : route.view === "usage" ? (
           <Usage days={route.days} />
         ) : route.view === "context" ? (

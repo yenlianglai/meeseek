@@ -12,6 +12,8 @@ const cases: [string, Route][] = [
   ["#/context/notes/sync%2F2026-10-10.md", { view: "context", kind: "notes", path: "sync/2026-10-10.md" }],
   ["#/inbox", { view: "inbox", item: undefined }],
   ["#/inbox/8fe38eb5a1", { view: "inbox", item: "8fe38eb5a1" }],
+  ["#/work", { view: "work", id: undefined }],
+  ["#/work/PROJ-12", { view: "work", id: "PROJ-12" }],
 ];
 
 test("every route survives a round trip through the URL", () => {

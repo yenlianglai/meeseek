@@ -29,6 +29,8 @@ from meeseek.runtime.past_sessions import read as get_meeseek_session
 from meeseek.runtime.past_sessions import search as search_meeseek_sessions
 from meeseek.runtime.tasks import task_create, task_note, task_update
 from meeseek.runtime.wakes import remind_me
+from meeseek.runtime.workstreams import workstream_get, workstream_note
+from meeseek.runtime.goldfish import review_spec
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +136,9 @@ _ALL_TOOLS: list[_ToolDef] = [
             "local repo or directory the task is about (empty = a scratch folder). A page it builds is one "
             "HTML file under outputs/pages/, shown in the conversation. It waits up to `wait_seconds` "
             "(default 240, max 900); a longer job keeps going, and its answer reaches the user where they "
-            "asked. Relay its answer; do not redo its work."
+            "asked. Relay its answer; do not redo its work. A long brief (a spec) is reviewed first by "
+            "zero-context reviewers: if it comes back with blockers, nothing went to Claude — fix them and "
+            "call again with the whole brief; the second call goes."
         ),
         fn=lambda prompt, cwd="", session_id="", wait_seconds=240, _origin=None: ask_claude(
             prompt, cwd, session_id, wait_seconds, _origin=_origin),
@@ -291,6 +295,54 @@ _ALL_TOOLS: list[_ToolDef] = [
         }, ["task_id"]),
     ),
     _ToolDef(
+        name="workstream_get",
+        description=(
+            "Read the shared notes on one piece of work — a ticket, an MR or a branch: its goal, "
+            "where it stands, the decisions made, open questions, the latest events, and the "
+            "meeseek conversations and Claude Code sessions that worked on it. Read it before "
+            "starting on a ticket or MR, instead of asking the person to recap."
+        ),
+        fn=lambda key="", branch="": workstream_get(key, branch),
+        parameters=_params({
+            "key": {"type": "string", "description": "A ticket key (e.g. PROJ-123) or an MR link or !123", "default": ""},
+            "branch": {"type": "string", "description": "A git branch, when there is no key", "default": ""},
+        }, []),
+    ),
+    _ToolDef(
+        name="workstream_note",
+        description=(
+            "Add one line to a piece of work's shared notes — a decision, a result, what is "
+            "next — so the next meeseek turn or Claude Code session on it knows. Use it when "
+            "something about the ticket or MR changed; not for chatter."
+        ),
+        fn=lambda key, text, _origin=None: workstream_note(key, text, _origin=_origin),
+        wants_origin=True,
+        parameters=_params({
+            "key": {"type": "string", "description": "The ticket key, MR link or !123 the note is about"},
+            "text": {"type": "string", "description": "One line: what changed"},
+        }, ["key", "text"]),
+    ),
+    # --- The goldfish review of a spec (runtime/goldfish.py) ---
+    _ToolDef(
+        name="review_spec",
+        description=(
+            "A zero-context review of a PRD, design or spec before you ship it: three reviewers that "
+            "see only the document and the files and links it names — comprehension (can it be "
+            "restated unaided), zoom-out (simplicity, YAGNI, reuse), implementation readiness (paths, "
+            "signatures, tests). Returns findings by severity: blocker, major, nit. Call it on the "
+            "finished draft before ship_output. Blockers: fix them, then call it once more on the "
+            "whole revised document (the one re-review). What remains goes into the document as an "
+            "'Accepted trade-offs' section. Costs three model calls a review. If it says the review "
+            "did not run, tell the user; never claim the document was reviewed."
+        ),
+        fn=lambda content="", path="", _origin=None: review_spec(content, path, _origin=_origin),
+        wants_origin=True,
+        parameters=_params({
+            "content": {"type": "string", "description": "The whole document, as Markdown", "default": ""},
+            "path": {"type": "string", "description": "Or a knowledge-base path (as kb_list shows it), when the document is saved", "default": ""},
+        }, []),
+    ),
+    _ToolDef(
         name="task_update",
         description=(
             "改任務狀態或安排下次檢查。status：active / waiting（等外部事件）/ done / "
@@ -351,8 +403,9 @@ RAW_TOOLS: frozenset[str] = frozenset(td.name for td in _ALL_TOOLS if td.shows_r
 # this is how the security policy and the harness tell their reads from writes.
 READ_PREFIXES: tuple[str, ...] = (
     "kb_", "get_", "list_", "search_", "check_", "describe_", "query_", "k8s_status", "review_context", "review_page",
+    "review_spec",
     "fetch_", "render_", "jira_search", "jira_get",
-    "confluence_search", "confluence_get",
+    "confluence_search", "confluence_get", "workstream_get",
 )
 
 # Tools that produce a picture (`writes=False`, a local PNG under outputs/).
@@ -380,6 +433,11 @@ TASK_TOOLS: tuple[str, ...] = ("task_create", "task_note", "task_update")
 # phone — for meeseek's agents, never a plugin: an MCP caller is not the
 # person, and its push would land on their phone unasked.
 REMIND_TOOLS: tuple[str, ...] = ("remind_me",)
+
+# The goldfish review (runtime/goldfish.py): three model calls on meeseek's
+# models — for meeseek's agents, never a plugin, so an MCP caller cannot spend
+# them unbounded.
+SPEC_TOOLS: tuple[str, ...] = ("review_spec",)
 
 
 # ---------------------------------------------------------------------------
